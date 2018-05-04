@@ -224,6 +224,45 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>unzip-package</id>
+            <phase>prepare-package</phase>
+            <configuration>
+              <target>
+                <!-- Unzip package -->
+                <property name="python.dist.path" value="${basedir}/target" />
+                <property name="python.package.name" value="${project.name}-${project.version}.tar.gz" />
+                <unzip src="${basedir}/target/mica-python_${project.version}.zip" dest="${python.dist.path}" />
+                <copy todir="${python.dist.path}/mica-python">
+                  <fileset dir="${basedir}/dist/python">
+                    <include name="*.*" />
+                  </fileset>
+                  <filterset>
+                    <filter token="project.name" value="${project.name}" />
+                    <filter token="project.version" value="${project.version}" />
+                    <filter token="project.description" value="${project.description}" />
+                    <filter token="project.download.url" value="http://download.obiba.org/mica/${obiba.deploy.dir}/${python.package.name}" />
+                  </filterset>
+                </copy>
+                <exec dir="${python.dist.path}/mica-python" executable="python" failonerror="true">
+                  <arg line="${python.dist.path}/mica-python/setup.py" />
+                  <arg line="sdist" />
+                  <arg line="--formats=gztar,zip" />
+                  <arg line="--dist-dir=${basedir}/target" />
+                </exec>
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
     </plugins>
   </build>
 
