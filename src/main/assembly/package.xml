@@ -21,7 +21,7 @@
     </fileSet>
 
     <fileSet>
-      <directory>../mica-web-model/target/generated-sources/protobuf-python/</directory>
+      <directory>target/mica-web-model-python/</directory>
       <outputDirectory>mica-python/bin/mica/protobuf</outputDirectory>
       <includes>
         <include>**/*.*</include>
