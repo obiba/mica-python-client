@@ -1,10 +1,26 @@
+sudo: required
 language: java
-jdk:
-  - oraclejdk8
-sudo: false
-before_install:
-  - nvm install 4.4.0
 addons:
   apt:
     packages:
-      - oracle-java8-installer
+    - rpm
+    - devscripts
+    - fakeroot
+    - debhelper
+deploy:
+  - provider: script
+    script: cp .travis.settings.xml $HOME/.m2/settings.xml && mvn -Prelease deploy
+    skip_cleanup: true
+    on:
+      all_branches: true
+      tags: true
+cache:
+  directories:
+  - $HOME/.cache
+  - $HOME/.m2
+notifications:
+  email:
+    recipients:
+    - dev@obiba.org
+    on_success: change
+    on_failure: always

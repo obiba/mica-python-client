@@ -6,7 +6,7 @@
   ~ are made available under the terms of the GNU Public License v3.0.
   ~
   ~ You should have received a copy of the GNU General Public License
-  ~ along with this program.  If not, see <http://www.gnu.org/licenses />.
+  ~ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -20,85 +20,21 @@
   <packaging>pom</packaging>
 
   <properties>
-    <obiba.deploy.dir>unstable</obiba.deploy.dir>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
     <mica.version>3.4-SNAPSHOT</mica.version>
+
+    <!-- maven plugins -->
+    <github-release-plugin.version>1.2.0</github-release-plugin.version>
     <maven-antrun-plugin.version>1.7</maven-antrun-plugin.version>
     <maven-assembly-plugin.version>2.4</maven-assembly-plugin.version>
     <maven-buildnumber-plugin.version>1.2</maven-buildnumber-plugin.version>
     <maven-dependency-plugin.version>3.1.0</maven-dependency-plugin.version>
+    <maven-deploy-plugin.version>2.8.1</maven-deploy-plugin.version>
     <maven-release-plugin.version>2.5.2</maven-release-plugin.version>
+    <rpm-maven-plugin.version>2.1.4</rpm-maven-plugin.version>
   </properties>
-
-  <repositories>
-    <repository>
-      <id>obiba.org</id>
-      <name>Obiba Maven 2.x Repository</name>
-      <url>http://repo.obiba.org/repo</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-
-  <pluginRepositories>
-    <pluginRepository>
-      <id>obiba</id>
-      <url>http://repo.obiba.org/repo</url>
-    </pluginRepository>
-  </pluginRepositories>
-
-  <prerequisites>
-    <maven>3.0.0</maven>
-  </prerequisites>
-
-  <distributionManagement>
-    <repository>
-      <id>obiba-releases</id>
-      <url>http://repo.obiba.org/libs-release-local</url>
-    </repository>
-    <snapshotRepository>
-      <id>obiba-snapshots</id>
-      <url>http://repo.obiba.org/libs-snapshot-local</url>
-    </snapshotRepository>
-  </distributionManagement>
-
-  <scm>
-    <connection>scm:git:git://github.com/obiba/mica-python-client.git</connection>
-    <developerConnection>scm:git:https://github.com/obiba/mica-python-client.git</developerConnection>
-    <url>https://github.com/obiba/mica-python-client</url>
-    <tag>HEAD</tag>
-  </scm>
-
-  <issueManagement>
-    <system>JIRA</system>
-    <url>http://jira.obiba.org</url>
-  </issueManagement>
-
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>http://ci.obiba.org/view/Mica/job/Mica2</url>
-  </ciManagement>
-
-  <mailingLists>
-    <mailingList>
-      <name>OBiBa Users</name>
-      <post>obiba-users@googlegroups.com</post>
-      <archive>https://groups.google.com/forum/?fromgroups#!forum/obiba-users</archive>
-    </mailingList>
-  </mailingLists>
-
-  <licenses>
-    <license>
-      <name>GNU Public License version 3</name>
-      <url>http://www.obiba.org/node/62</url>
-    </license>
-  </licenses>
 
   <dependencyManagement>
     <dependencies>
@@ -111,6 +47,14 @@
           <exclusion>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jersey</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.obiba.commons</groupId>
+            <artifactId>obiba-mongodb</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.obiba.mica</groupId>
+            <artifactId>mica-core</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -132,11 +76,7 @@
           <artifactId>maven-release-plugin</artifactId>
           <version>${maven-release-plugin.version}</version>
           <configuration>
-            <!-- Use parent version as modules' version -->
-            <autoVersionSubmodules>true</autoVersionSubmodules>
-            <releaseProfiles>ci-build,release</releaseProfiles>
-            <!-- Comment this profile because Jenkins crashes while performing the release -->
-            <!--<preparationGoals>clean verify install</preparationGoals>-->
+            <releaseProfiles>release</releaseProfiles>
           </configuration>
         </plugin>
         <plugin>
@@ -154,6 +94,16 @@
           <artifactId>maven-assembly-plugin</artifactId>
           <version>${maven-assembly-plugin.version}</version>
         </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>rpm-maven-plugin</artifactId>
+          <version>${rpm-maven-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>de.jutzig</groupId>
+          <artifactId>github-release-plugin</artifactId>
+          <version>${github-release-plugin.version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -164,11 +114,11 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
-           <id>unpack</id>
-           <phase>prepare-package</phase>
-           <goals>
-             <goal>unpack</goal>
-           </goals>
+            <id>unpack</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
             <configuration>
               <outputDirectory>${basedir}/target</outputDirectory>
               <artifactItems>
@@ -211,6 +161,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
@@ -252,7 +203,7 @@
                     <filter token="project.name" value="${project.name}" />
                     <filter token="project.version" value="${project.version}" />
                     <filter token="project.description" value="${project.description}" />
-                    <filter token="project.download.url" value="http://download.obiba.org/mica/${obiba.deploy.dir}/${python.package.name}" />
+                    <filter token="project.download.url" value="https://github.com/obiba/${project.name}/releases/download/${project.version}/${python.package.name}" />
                   </filterset>
                 </copy>
                 <exec dir="${python.dist.path}/mica-python" executable="python" failonerror="true">
@@ -270,13 +221,22 @@
         </executions>
       </plugin>
 
+      <!-- Disable default deployer. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin.version}</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
   <profiles>
     <profile>
       <!-- A profile for the builds performed by the continuous integration server -->
-      <id>ci-build</id>
+      <id>release</id>
       <build>
         <plugins>
           <plugin>
@@ -385,18 +345,17 @@
                     </copy>
                     <mkdir dir="${deb.dir}/usr/share/pyshared" />
                     <mkdir dir="${deb.dir}/usr/bin" />
-                    <move todir="${deb.dir}/usr/bin">
+                    <copy todir="${deb.dir}/usr/bin">
                       <fileset dir="${target.dir}/mica-python/bin/scripts" includes="mica" />
-                    </move>
-                    <move todir="${deb.dir}/usr/share/pyshared/mica">
+                    </copy>
+                    <copy todir="${deb.dir}/usr/share/pyshared/mica">
                       <fileset dir="${target.dir}/mica-python/bin/mica" includes="**/*" />
-                    </move>
+                    </copy>
                     <exec executable="debuild" dir="${deb.dir}" failonerror="true" osfamily="unix">
                       <arg value="-b" />
-                      <!-- Uncomment to build locally -->
-                      <!--<arg value="-i" />-->
-                      <!--<arg value="-us" />-->
-                      <!--<arg value="-uc" />-->
+                      <arg value="-i" />
+                      <arg value="-us" />
+                      <arg value="-uc" />
                     </exec>
                     <move todir="${basedir}/target">
                       <fileset dir="${deb.dir}">
@@ -407,48 +366,38 @@
                   </target>
                 </configuration>
               </execution>
+            </executions>
+          </plugin>
+
+          <!-- Upload packages to github release -->
+          <plugin>
+            <groupId>de.jutzig</groupId>
+            <artifactId>github-release-plugin</artifactId>
+            <executions>
               <execution>
-                <id>deploy-deb</id>
+                <id>make-release</id>
                 <phase>deploy</phase>
                 <goals>
-                  <goal>run</goal>
+                  <goal>release</goal>
                 </goals>
                 <configuration>
-                  <target>
-                    <property name="deb.package.name" value="${project.name}_${project.version}-b${buildNumber}_all.deb" />
-                    <!-- Deploy deb file in deb repo -->
-                    <copy file="target/${deb.package.name}" todir="${obiba.deb.dir}/${obiba.deploy.dir}" />
-                  </target>
-                </configuration>
-              </execution>
-              <execution>
-                <id>deploy-package</id>
-                <phase>deploy</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-                    <property name="python.dist.path" value="${basedir}/target" />
-                    <property name="python.package.name" value="${project.name}-${project.version}.tar.gz" />
-                    <!-- Deploy Python package file in download repo -->
-                    <copy file="target/${python.package.name}" todir="${obiba.download.dir}/mica/${obiba.deploy.dir}" />
-                  </target>
-                </configuration>
-              </execution>
-              <execution>
-                <id>deploy-rpm</id>
-                <phase>deploy</phase>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-                <configuration>
-                  <target>
-                    <!-- Deploy rpm file in rpm repo -->
-                    <copy todir="${obiba.rpm.dir}/${obiba.deploy.dir}">
-                      <fileset dir="target/rpm/mica-python-client/RPMS/noarch" />
-                    </copy>
-                  </target>
+                  <releaseName>${project.version}</releaseName>
+                  <tag>${project.version}</tag>
+                  <fileSets>
+                    <fileSet>
+                      <directory>${project.build.directory}</directory>
+                      <includes>
+                        <include>*.tar.gz</include>
+                        <include>*.deb</include>
+                      </includes>
+                    </fileSet>
+                    <fileSet>
+                      <directory>${project.build.directory}/rpm/${project.name}/RPMS/noarch</directory>
+                      <includes>
+                        <include>*.rpm</include>
+                      </includes>
+                    </fileSet>
+                  </fileSets>
                 </configuration>
               </execution>
             </executions>
@@ -457,5 +406,73 @@
       </build>
     </profile>
   </profiles>
+
+
+  <repositories>
+    <repository>
+      <id>obiba-releases</id>
+      <name>Obiba Maven Releases Repository</name>
+      <url>https://dl.bintray.com/obiba/maven</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>obiba-snapshots</id>
+      <name>Obiba Maven Snapshots Repository</name>
+      <url>https://obiba.jfrog.io/obiba/libs-snapshot</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <distributionManagement>
+    <repository>
+      <id>obiba-bintray</id>
+      <url>https://api.bintray.com/obiba/maven/</url>
+    </repository>
+    <snapshotRepository>
+      <id>obiba-artifactory</id>
+      <url>https://obiba.jfrog.io/obiba/libs-snapshot</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <scm>
+    <connection>scm:git:https://github.com/obiba/mica-python-client.git</connection>
+    <developerConnection>scm:git:https://github.com/obiba/mica-python-client.git</developerConnection>
+    <url>https://github.com/obiba/mica-python-client</url>
+  </scm>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/obiba/mica-python-client/issues</url>
+  </issueManagement>
+
+  <ciManagement>
+    <system>Travis</system>
+    <url>https://travis-ci.org/obiba/mica-python-client</url>
+  </ciManagement>
+
+  <mailingLists>
+    <mailingList>
+      <name>OBiBa Users</name>
+      <post>obiba-users@googlegroups.com</post>
+      <archive>https://groups.google.com/forum/?fromgroups#!forum/obiba-users</archive>
+    </mailingList>
+  </mailingLists>
+
+  <licenses>
+    <license>
+      <name>GNU Public License version 3</name>
+      <url>https://www.gnu.org/licenses/gpl-3.0.txt</url>
+    </license>
+  </licenses>
 
 </project>
