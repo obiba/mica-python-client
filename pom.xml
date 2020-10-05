@@ -16,7 +16,7 @@
   <artifactId>mica-python-client</artifactId>
   <name>mica-python-client</name>
   <description>Mica Python Client Module</description>
-  <version>3.4-SNAPSHOT</version>
+  <version>4.3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <properties>
