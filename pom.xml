@@ -16,7 +16,7 @@
   <artifactId>mica-python-client</artifactId>
   <name>mica-python-client</name>
   <description>Mica Python Client Module</description>
-  <version>4.3.0</version>
+  <version>4.3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <properties>
@@ -373,7 +373,7 @@
     <connection>scm:git:https://github.com/obiba/mica-python-client.git</connection>
     <developerConnection>scm:git:https://github.com/obiba/mica-python-client.git</developerConnection>
     <url>https://github.com/obiba/mica-python-client</url>
-    <tag>4.3.0</tag>
+    <tag>mica-python-client-4.3.x</tag>
   </scm>
 
   <issueManagement>
