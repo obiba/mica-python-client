@@ -19,13 +19,5 @@
       <outputDirectory>mica-python/bin</outputDirectory>
       <filtered>true</filtered>
     </fileSet>
-
-    <fileSet>
-      <directory>target/mica-web-model-python/</directory>
-      <outputDirectory>mica-python/bin/mica/protobuf</outputDirectory>
-      <includes>
-        <include>**/*.*</include>
-      </includes>
-    </fileSet>
   </fileSets>
 </assembly>

@@ -7,7 +7,7 @@ import json
 import sys
 import pycurl
 import mica.core
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 
 class FileAction(argparse.Action):
@@ -34,10 +34,10 @@ class MicaFile:
         self.path = path
 
     def get_dl_ws(self):
-        return '/'.join(['/draft/file-dl', urllib.quote(self.path.strip('/'))])
+        return '/'.join(['/draft/file-dl', urllib.parse.quote(self.path.strip('/'))])
 
     def get_ws(self):
-        return '/'.join(['/draft/file', urllib.quote(self.path.strip('/'))])
+        return '/'.join(['/draft/file', urllib.parse.quote(self.path.strip('/'))])
 
 
 def add_arguments(parser):
@@ -94,15 +94,15 @@ class MicaFileClient(object):
                 json.dumps(dict(id='', fileName='.', path='/'.join([self.file.path, name])))).send()
 
     def copy(self, dest):
-        return self._get_request().put().resource('%s?copy=%s' % (self.file.get_ws(), urllib.quote_plus(dest, safe=''))).send()
+        return self._get_request().put().resource('%s?copy=%s' % (self.file.get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
     def move(self, dest):
         self._validate_status(self.STATUS_DRAFT)
-        return self._get_request().put().resource('%s?move=%s' % (self.file.get_ws(), urllib.quote_plus(dest, safe=''))).send()
+        return self._get_request().put().resource('%s?move=%s' % (self.file.get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
     def name(self, name):
         self._validate_status(self.STATUS_DRAFT)
-        return self._get_request().put().resource('%s?name=%s' % (self.file.get_ws(), urllib.quote_plus(name, safe=''))).send()
+        return self._get_request().put().resource('%s?name=%s' % (self.file.get_ws(), urllib.parse.quote_plus(name, safe=''))).send()
 
     def status(self, status):
         return self._get_request().put().resource('%s?status=%s' % (self.file.get_ws(), status.upper())).send()
@@ -151,12 +151,12 @@ def do_command(args):
         res = response.pretty_json() if args.json and not args.download and not args.upload else response.content
 
         # output to stdout
-        print res
-    except Exception, e:
-        print >> sys.stderr, e
+        print(res)
+    except Exception as e:
+        print(e, file=sys.stderr)
         sys.exit(2)
-    except pycurl.error, error:
-        print response
+    except pycurl.error as error:
+        print(response)
         errno, errstr = error
-        print >> sys.stderr, 'An error occurred: ', errstr
+        print('An error occurred: ', errstr, file=sys.stderr)
         sys.exit(2)

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!--
-  ~ Copyright (c) 2018 OBiBa. All rights reserved.
+  ~ Copyright (c) 2020 OBiBa. All rights reserved.
   ~
   ~ This program and the accompanying materials
   ~ are made available under the terms of the GNU Public License v3.0.
@@ -23,7 +23,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>1.8</java.version>
-    <mica.version>3.4-SNAPSHOT</mica.version>
+    <mica.version>4.3-SNAPSHOT</mica.version>
 
     <!-- maven plugins -->
     <github-release-plugin.version>1.2.0</github-release-plugin.version>
@@ -37,34 +37,10 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>org.obiba.mica</groupId>
-        <artifactId>mica-web-model</artifactId>
-        <version>${mica.version}</version>
-        <scope>compile</scope>
-        <exclusions>
-          <exclusion>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jersey</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.obiba.commons</groupId>
-            <artifactId>obiba-mongodb</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.obiba.mica</groupId>
-            <artifactId>mica-core</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
     </dependencies>
   </dependencyManagement>
 
   <dependencies>
-    <dependency>
-      <groupId>org.obiba.mica</groupId>
-      <artifactId>mica-web-model</artifactId>
-    </dependency>
   </dependencies>
 
   <build>
@@ -107,34 +83,6 @@
     </pluginManagement>
 
     <plugins>
-      <!-- Unzip shared resources -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>unpack</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>unpack</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/target</outputDirectory>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>org.obiba.mica</groupId>
-                  <artifactId>mica-web-model</artifactId>
-                  <version>${mica.version}</version>
-                  <classifier>python</classifier>
-                  <overWrite>true</overWrite>
-                  <type>zip</type>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
@@ -235,9 +183,8 @@
                   <changelogFile>/usr/share/doc/mica-python-client/changelog</changelogFile>
                   <targetOS>Linux</targetOS>
                   <requires>
-                    <require>python &gt;= 2.7</require>
-                    <require>python-pycurl</require>
-                    <require>protobuf-python &gt;= 2.5</require>
+                    <require>python3</require>
+                    <require>python3-pycurl</require>
                   </requires>
 
                   <mappings>
@@ -257,7 +204,7 @@
                     </mapping>
 
                     <mapping>
-                      <directory>/usr/share/pyshared/mica</directory>
+                      <directory>/usr/lib/python3/dist-packages/mica</directory>
                       <filemode>755</filemode>
                       <sources>
                         <source>
@@ -321,12 +268,12 @@
                         <filter token="date" value="${deb.date}" />
                       </filterset>
                     </copy>
-                    <mkdir dir="${deb.dir}/usr/share/pyshared" />
+                    <mkdir dir="${deb.dir}/usr/lib/python3/dist-packages" />
                     <mkdir dir="${deb.dir}/usr/bin" />
                     <copy todir="${deb.dir}/usr/bin">
                       <fileset dir="${target.dir}/mica-python/bin/scripts" includes="mica" />
                     </copy>
-                    <copy todir="${deb.dir}/usr/share/pyshared/mica">
+                    <copy todir="${deb.dir}/usr/lib/python3/dist-packages/mica">
                       <fileset dir="${target.dir}/mica-python/bin/mica" includes="**/*" />
                     </copy>
                     <exec executable="debuild" dir="${deb.dir}" failonerror="true" osfamily="unix">

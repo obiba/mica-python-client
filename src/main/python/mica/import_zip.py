@@ -18,7 +18,7 @@ def import_zip(args, path):
     """
     Import the Zip file content
     """
-    print "Importing " + path + "..."
+    print("Importing " + path + "...")
     # Build and send request
     try:
         request = mica.core.MicaClient.build(mica.core.MicaClient.LoginInfo.parse(args)).new_request()
@@ -36,13 +36,13 @@ def import_zip(args, path):
 
         # output to stdout
         if len(res) > 0:
-            print res
-    except Exception, e:
-        print e
+            print(res)
+    except Exception as e:
+        print(e)
         sys.exit(2)
-    except pycurl.error, error:
+    except pycurl.error as error:
         errno, errstr = error
-        print >> sys.stderr, 'An error occurred: ', errstr
+        print('An error occurred: ', errstr, file=sys.stderr)
         sys.exit(2)
 
 

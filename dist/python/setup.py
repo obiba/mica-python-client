@@ -21,10 +21,10 @@ DESCRIPTION_LOG = """Data publishing Web application for biobanks by OBiBa. Mica
     collected from any data source, must be integrated and stored in a central
     data repository under a uniform model.
 """
-PACKAGES = ['mica', 'mica.protobuf']
+PACKAGES = ['mica']
 PACKAGES_DIR = {'mica': 'bin/mica'}
 SCRIPTS = ['bin/scripts/mica']
-INSTALL_REQUIRES = ['protobuf >= 2.4', 'pycurl']
+INSTALL_REQUIRES = ['pycurl']
 
 setup(
     name=PACKAGE_NAME,

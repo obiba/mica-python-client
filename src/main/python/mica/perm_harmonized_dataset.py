@@ -34,18 +34,18 @@ def do_command(args):
 
         try:
             response = request.resource(mica.perm.do_ws(args, ['draft','harmonized-dataset', args.id, 'permissions'])).send()
-        except Exception, e:
-            print Exception, e
+        except Exception as e:
+            print(Exception, e)
 
         # format response
         if response.code != 204:
-            print response.content
+            print(response.content)
 
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         sys.exit(2)
 
-    except pycurl.error, error:
+    except pycurl.error as error:
         errno, errstr = error
-        print >> sys.stderr, 'An error occurred: ', errstr
+        print('An error occurred: ', errstr, file=sys.stderr)
         sys.exit(2)

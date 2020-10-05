@@ -5,7 +5,7 @@ Update an existing collected dataset, mainly for managing the linkage with opal.
 import sys
 import mica.core
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 def add_arguments(parser):
     """
@@ -29,7 +29,7 @@ def new_request(args):
     return request
 
 def do_update(path, args):
-    print "Updating " + args.id + "..."
+    print("Updating " + args.id + "...")
     # get existing and remove useless fields
     request = new_request(args)
     response = request.get().resource(path).send()
@@ -41,7 +41,7 @@ def do_update(path, args):
     dataset.pop('permissions', None)
     if 'obiba.mica.CollectedDatasetDto.type' not in dataset:
         if not args.study or not args.population or not args.dce or not args.project or not args.table:
-            print "Study table is missing and cannot be created."
+            print("Study table is missing and cannot be created.")
             sys.exit(2)
         dataset['obiba.mica.CollectedDatasetDto.type'] = { 'studyTable': { } }
     dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'].pop('studySummary', None)
@@ -67,8 +67,8 @@ def do_update(path, args):
     request.put().resource(path).query({ 'comment': ', '.join(comment) + ' (update-collected-dataset)' }).content_type_json()
     request.content(json.dumps(dataset, separators=(',',':')))
     if args.verbose:
-        print "Updated: "
-        print json.dumps(dataset, sort_keys=True, indent=2, separators=(',', ': '))
+        print("Updated: ")
+        print(json.dumps(dataset, sort_keys=True, indent=2, separators=(',', ': ')))
     request.send()
 
 def do_command(args):
@@ -82,19 +82,19 @@ def do_command(args):
             do_update(path, args)
 
         if args.publish:
-            print "Publishing " + args.id + "..."
+            print("Publishing " + args.id + "...")
             request = new_request(args)
             request.put().resource(path + '/_publish').send()
 
         if args.unpublish:
-            print "Unpublishing " + args.id + "..."
+            print("Unpublishing " + args.id + "...")
             request = new_request(args)
             request.delete().resource(path + '/_publish').send()
 
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         sys.exit(2)
-    except pycurl.error, error:
+    except pycurl.error as error:
         errno, errstr = error
-        print >> sys.stderr, 'An error occurred: ', errstr
+        print('An error occurred: ', errstr, file=sys.stderr)
         sys.exit(2)

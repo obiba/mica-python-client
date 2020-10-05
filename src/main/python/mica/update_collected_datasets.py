@@ -5,7 +5,7 @@ Update several existing collected dataset, mainly for managing the linkage with 
 import sys
 import mica.core
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import re
 
 def add_arguments(parser):
@@ -27,7 +27,7 @@ def new_request(args):
     return request
 
 def do_update(path, args, id):
-    print "Updating " + id + "..."
+    print("Updating " + id + "...")
     # get existing and remove useless fields
     request = new_request(args)
     response = request.get().resource(path).send()
@@ -38,7 +38,7 @@ def do_update(path, args, id):
     dataset.pop('published', None)
     dataset.pop('permissions', None)
     if 'obiba.mica.CollectedDatasetDto.type' not in dataset:
-        print "Study table is missing in " + id
+        print("Study table is missing in " + id)
         sys.exit(2)
     dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'].pop('studySummary', None)
 
@@ -51,8 +51,8 @@ def do_update(path, args, id):
     request.put().resource(path).query({ 'comment': ', '.join(comment) + ' (update-collected-datasets)' }).content_type_json()
     request.content(json.dumps(dataset, separators=(',',':')))
     if args.verbose:
-        print "Updated: "
-        print json.dumps(dataset, sort_keys=True, indent=2, separators=(',', ': '))
+        print("Updated: ")
+        print(json.dumps(dataset, sort_keys=True, indent=2, separators=(',', ': ')))
     request.send()
 
 def do_command(args):
@@ -69,24 +69,24 @@ def do_command(args):
             id = dataset['id']
             if re.match(args.id, id):
                 if args.dry:
-                    print id
+                    print(id)
                 else:
                     path = '/draft/collected-dataset/' + id
                     if args.project:
                         do_update(path, args, id)
                     if args.publish:
-                        print "Publishing " + id + "..."
+                        print("Publishing " + id + "...")
                         request = new_request(args)
                         request.put().resource(path + '/_publish').send()
                     if args.unpublish:
-                        print "Unpublishing " + id + "..."
+                        print("Unpublishing " + id + "...")
                         request = new_request(args)
                         request.delete().resource(path + '/_publish').send()
 
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         sys.exit(2)
-    except pycurl.error, error:
+    except pycurl.error as error:
         errno, errstr = error
-        print >> sys.stderr, 'An error occurred: ', errstr
+        print('An error occurred: ', errstr, file=sys.stderr)
         sys.exit(2)

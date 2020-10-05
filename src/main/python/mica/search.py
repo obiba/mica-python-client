@@ -33,11 +33,11 @@ def send_search_request(client, ws, query, verbose=False):
         if verbose:
             request.verbose()
         response = request.post().resource(ws).content_type_form().form({'query': query}).send()
-    except Exception, e:
-        print >> sys.stderr, e
-    except pycurl.error, error:
+    except Exception as e:
+        print(e, file=sys.stderr)
+    except pycurl.error as error:
         errno, errstr = error
-        print >> sys.stderr, 'An error occurred: ', errstr
+        print('An error occurred: ', errstr, file=sys.stderr)
 
     return response.as_json()
 
@@ -56,9 +56,9 @@ def append_rql(query, target, select, sort, start, limit, locale):
 
     # hack: replace target call with statement
     if target + '()' in q:
-        q = string.replace(q, target + '()', target + '(' + statement + ')')
+        q = q.replace(target + '()', target + '(' + statement + ')')
     elif target + '(' in q:
-        q = string.replace(q, target + '(', target + '(' + statement + ',')
+        q = q.replace(target + '(', target + '(' + statement + ',')
     else:
         q = target + '(' + statement + '),' + q
 
@@ -67,20 +67,19 @@ def append_rql(query, target, select, sort, start, limit, locale):
 def extract_label(labels, locale='en', locale_key='lang', value_key='value'):
     if not labels:
         return None
-    encoder = codecs.getincrementalencoder('utf-8')()
     label_und = None
     if labels:
         for label in labels:
             if label[locale_key] == locale:
-                return encoder.encode(label[value_key])
+                return label[value_key]
             if label[locale_key] == 'und':
                 label_und = label[value_key]
-    return encoder.encode(label_und) if label_und else ''
+    return label_und if label_und else ''
 
 def new_writer(out, headers):
     file = sys.stdout
     if out:
-        file = open(out, 'wb')
+        file = open(out, 'w')
     writer = csv.DictWriter(file, fieldnames=headers, escapechar='"', quotechar='"', quoting=csv.QUOTE_ALL)
     writer.writeheader()
     return writer
@@ -92,7 +91,7 @@ def to_string(value):
 
 def flatten(content, locale='en'):
     flat = {}
-    for key in content.keys():
+    for key in list(content.keys()):
         value = content[key]
         if type(value) is dict:
             fvalue = flatten(value, locale)
@@ -100,11 +99,9 @@ def flatten(content, locale='en'):
                 nk = key + '.' + k if k != locale else key
                 flat[nk] = fvalue[k]
         elif type(value) is list:
-            encoder = codecs.getincrementalencoder('utf-8')()
-            flat[key] = encoder.encode('|'.join(map(to_string, value)))
+            flat[key] = '|'.join(map(to_string, value))
         else:
-            encoder = codecs.getincrementalencoder('utf-8')()
-            flat[key] = encoder.encode(value) if type(value) is unicode else value
+            flat[key] = to_string(value)
     return flat
 
 def search_networks(args, client):
@@ -116,7 +113,7 @@ def search_networks(args, client):
         for item in res['networkResultDto']['obiba.mica.NetworkResultDto.result']['networks']:
             if 'content' in item:
                 item['flat'] = flatten(json.loads(item['content']), args.locale)
-                for key in item['flat'].keys():
+                for key in list(item['flat'].keys()):
                     if key not in headers:
                         headers.append(key)
         writer = new_writer(args.out, headers)
@@ -142,7 +139,7 @@ def search_studies(args, client):
         for item in res['studyResultDto']['obiba.mica.StudyResultDto.result']['summaries']:
             if 'content' in item:
                 item['flat'] = flatten(json.loads(item['content']), args.locale)
-                for key in item['flat'].keys():
+                for key in list(item['flat'].keys()):
                     if key not in headers:
                         headers.append(key)
         writer = new_writer(args.out, headers)
@@ -169,7 +166,7 @@ def search_study_populations(args, client):
                 for pop in item['populationSummaries']:
                     if 'content' in pop:
                         pop['flat'] = flatten(json.loads(pop['content']), args.locale)
-                        for key in pop['flat'].keys():
+                        for key in list(pop['flat'].keys()):
                             if key not in headers:
                                 headers.append(key)
         writer = new_writer(args.out, headers)
@@ -200,7 +197,7 @@ def search_study_dces(args, client):
                         for dce in pop['dataCollectionEventSummaries']:
                             if 'content' in dce:
                                 dce['flat'] = flatten(json.loads(dce['content']), args.locale)
-                                for key in dce['flat'].keys():
+                                for key in list(dce['flat'].keys()):
                                     if key not in headers:
                                         headers.append(key)
         writer = new_writer(args.out, headers)
@@ -233,7 +230,7 @@ def search_datasets(args, client):
         for item in res['datasetResultDto']['obiba.mica.DatasetResultDto.result']['datasets']:
             if 'content' in item:
                 item['flat'] = flatten(json.loads(item['content']), args.locale)
-                for key in item['flat'].keys():
+                for key in list(item['flat'].keys()):
                     if key not in headers:
                         headers.append(key)
         writer = new_writer(args.out, headers)
@@ -268,11 +265,10 @@ def search_variables(args, client):
     q = append_rql(args.query, 'variable', ['*'], ['id'], args.start, args.limit, args.locale)
     ws = mica.core.UriBuilder(['variables', '_rql']).build()
     res = send_search_request(client, ws, q, args.verbose)
-    encoder = codecs.getincrementalencoder('utf-8')()
 
     def category_label(category):
         if 'attributes' in category:
-            labels = map(lambda label: extract_label(label['values'], args.locale), filter(lambda a: a['name'] == 'label', category['attributes']))
+            labels = [extract_label(label['values'], args.locale) for label in [a for a in category['attributes'] if a['name'] == 'label']]
             return labels[0] if len(labels)>0 else ''
         else:
             return ''
@@ -290,8 +286,8 @@ def search_variables(args, client):
         writer = new_writer(args.out, headers)
         for item in res['variableResultDto']['obiba.mica.DatasetVariableResultDto.result']['summaries']:
             row = {
-                'id': encoder.encode(item['id']),
-                'name': encoder.encode(item['name']),
+                'id': item['id'],
+                'name': item['name'],
                 'label': extract_label(item['variableLabel'], args.locale) if 'variableLabel' in item else '',
                 'description': extract_label(item['description'], args.locale) if 'description' in item else '',
                 'datasetId': item['datasetId'],
@@ -301,15 +297,15 @@ def search_variables(args, client):
                 'variableType': item['variableType'],
                 'valueType': item['valueType'] if 'valueType' in item else '',
                 'nature': item['nature'] if 'nature' in item else '',
-                'mimeType': encoder.encode(item['mimeType']) if 'mimeType' in item else '',
-                'unit': encoder.encode(item['unit']) if 'unit' in item else '',
-                'referencedEntityType': encoder.encode(item['referencedEntityType']) if 'referencedEntityType' in item else '',
+                'mimeType': item['mimeType'] if 'mimeType' in item else '',
+                'unit': item['unit'] if 'unit' in item else '',
+                'referencedEntityType': item['referencedEntityType'] if 'referencedEntityType' in item else '',
                 'repeatable': item['repeatable'] if 'repeatable' in item else '',
-                'occurrenceGroup': encoder.encode(item['occurrenceGroup']) if 'occurrenceGroup' in item else ''
+                'occurrenceGroup': item['occurrenceGroup'] if 'occurrenceGroup' in item else ''
             }
             if 'categories' in item:
-                row['categories'] = '|'.join(map(lambda c: c['name'], item['categories']))
-                row['categories.missing'] = '|'.join(map(lambda c: str(c['missing']), item['categories']))
+                row['categories'] = '|'.join([c['name'] for c in item['categories']])
+                row['categories.missing'] = '|'.join([str(c['missing']) for c in item['categories']])
                 row['categories.label'] = '|'.join(map(category_label, item['categories']))
             if 'annotations' in item:
                 for annot in item['annotations']:
