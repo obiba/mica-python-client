@@ -6,7 +6,7 @@ python2_lib=/usr/lib/python2.7/dist-packages
 
 case "$1" in
     configure)
-    iif [ -d $python2_lib ]; then
+    if [ -d $python2_lib ]; then
         rm -f $python2_lib/mica
     fi
     ;;
