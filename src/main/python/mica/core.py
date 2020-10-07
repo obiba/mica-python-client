@@ -59,8 +59,7 @@ class MicaClient:
             if pwd:
                 e = getpass.getpass(prompt=text + ': ')
             else:
-                print(text + ': ', end=' ')
-                e = sys.stdin.readline().rstrip().strip()
+                e = input(text + ': ')
         return e
 
     def credentials(self, user, password):
