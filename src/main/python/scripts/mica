@@ -44,7 +44,7 @@ def add_subcommand(name, help, add_args_func, default_func):
 
 
 # Parse arguments
-parser = argparse.ArgumentParser(description='Mica command line.')
+parser = argparse.ArgumentParser(description='Mica command line tool.')
 subparsers = parser.add_subparsers(title='sub-commands',
                                    help='Available sub-commands. Use --help option on the sub-command '
                                         'for more details.')
@@ -99,4 +99,8 @@ add_subcommand('rest', 'Request directly the Mica REST API, for advanced users.'
 
 # Execute selected command
 args = parser.parse_args()
-args.func(args)
+if hasattr(args, 'func'):
+  args.func(args)
+else:
+  print('Mica command line tool.')
+  print('For more details: mica --help')

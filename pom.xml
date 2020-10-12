@@ -204,7 +204,7 @@
                     </mapping>
 
                     <mapping>
-                      <directory>/usr/lib/python3/dist-packages/mica</directory>
+                      <directory>/usr/share/pyshared/mica</directory>
                       <filemode>755</filemode>
                       <sources>
                         <source>
@@ -268,12 +268,12 @@
                         <filter token="date" value="${deb.date}" />
                       </filterset>
                     </copy>
-                    <mkdir dir="${deb.dir}/usr/lib/python3/dist-packages" />
+                    <mkdir dir="${deb.dir}/usr/share/pyshared" />
                     <mkdir dir="${deb.dir}/usr/bin" />
                     <copy todir="${deb.dir}/usr/bin">
                       <fileset dir="${target.dir}/mica-python/bin/scripts" includes="mica" />
                     </copy>
-                    <copy todir="${deb.dir}/usr/lib/python3/dist-packages/mica">
+                    <copy todir="${deb.dir}/usr/share/pyshared/mica">
                       <fileset dir="${target.dir}/mica-python/bin/mica" includes="**/*" />
                     </copy>
                     <exec executable="debuild" dir="${deb.dir}" failonerror="true" osfamily="unix">
