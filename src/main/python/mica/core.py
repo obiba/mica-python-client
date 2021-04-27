@@ -27,22 +27,9 @@ class MicaClient:
 
     @classmethod
     def build(cls, loginInfo):
-        if loginInfo.isSsl():
-            return MicaClient.buildWithCertificate(loginInfo.data['server'], loginInfo.data['cert'],
-                                                   loginInfo.data['key'])
-        else:
-            return MicaClient.buildWithAuthentication(loginInfo.data['server'], loginInfo.data['user'],
+        return MicaClient.buildWithAuthentication(loginInfo.data['server'], loginInfo.data['user'],
                                                       loginInfo.data['password'])
         raise Exception('Failed to build Mica Client')
-
-    @classmethod
-    def buildWithCertificate(cls, server, cert, key):
-        client = cls(server)
-        if client.base_url.startswith('https:'):
-            client.verify_peer(0)
-            client.verify_host(0)
-        client.keys(cert, key)
-        return client
 
     @classmethod
     def buildWithAuthentication(cls, server, user, password):
@@ -66,16 +53,6 @@ class MicaClient:
         u = self.__ensure_entry('User name', user)
         p = self.__ensure_entry('Password', password, True)
         return self.header('Authorization', 'Basic ' + base64.b64encode((u + ':' + p).encode("utf-8")).decode("utf-8"))
-
-    def keys(self, cert_file, key_file, key_pwd=None, ca_certs=None):
-        self.curl_option(pycurl.SSLCERT, cert_file)
-        self.curl_option(pycurl.SSLKEY, key_file)
-        if key_pwd:
-            self.curl_option(pycurl.KEYPASSWD, key_pwd)
-        if ca_certs:
-            self.curl_option(pycurl.CAINFO, ca_certs)
-        self.headers.pop('Authorization', None)
-        return self
 
     def verify_peer(self, verify):
         return self.curl_option(pycurl.SSL_VERIFYPEER, verify)
@@ -113,20 +90,11 @@ class MicaClient:
             if argv.get('user') and argv.get('password'):
                 data['user'] = argv['user']
                 data['password'] = argv['password']
-            elif argv.get('ssl_cert') and argv.get('ssl_key'):
-                data['cert'] = argv['ssl_cert']
-                data['key'] = argv['ssl_key']
             else:
-                raise Exception('Invalid login information. Requires user-password or certificate-key information')
+                raise Exception('Invalid login information. Requires user and password.')
 
             setattr(cls, 'data', data)
             return cls()
-
-        def isSsl(self):
-            if self.data.keys() & {'cert', 'key'}:
-                return True
-            return False
-
 
 class MicaRequest:
     """

@@ -37,17 +37,6 @@ class MicaClientTestSSLConnection(unittest.TestCase):
         except pycurl.error, error:
             self.fail(error)
 
-    def test_sendSecuredRest(self):
-        try:
-            client = MicaClient.buildWithCertificate(server="%s:%s" % (self.SSL_SERVER, self.SSL_PORT),
-                                                     cert=self.SSL_CERTIFICATE,
-                                                     key=self.SSL_KEY)
-            self.__sendSimpleRequest(client.new_request())
-        except Exception, e:
-            self.fail(e)
-        except pycurl.error, error:
-            self.fail(error)
-
     def test_validAuthLoginInfo(self):
         try:
             args = Namespace(mica="%s:%s" % (self.SERVER, self.PORT), user='administrator', password='password')
