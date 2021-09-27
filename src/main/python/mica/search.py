@@ -123,7 +123,7 @@ def search_networks(args, client):
                 'name': extract_label(item['name'], args.locale),
                 'description': extract_label(item['description'], args.locale) if 'description' in item else '',
                 'acronym': extract_label(item['acronym'], args.locale),
-                'studyIds': '|'.join(item['studyIds'])
+                'studyIds': '|'.join(item['studyIds']) if 'studyIds' in item else ''
             }
             if 'flat' in item:
                 for key in item['flat']:
