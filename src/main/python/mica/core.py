@@ -28,16 +28,16 @@ class MicaClient:
     @classmethod
     def build(cls, loginInfo):
         return MicaClient.buildWithAuthentication(loginInfo.data['server'], loginInfo.data['user'],
-                                                      loginInfo.data['password'])
+                                                  loginInfo.data['password'], loginInfo.data['otp'])
         raise Exception('Failed to build Mica Client')
 
     @classmethod
-    def buildWithAuthentication(cls, server, user, password):
+    def buildWithAuthentication(cls, server, user, password, otp):
         client = cls(server)
         if client.base_url.startswith('https:'):
             client.verify_peer(0)
             client.verify_host(0)
-        client.credentials(user, password)
+        client.credentials(user, password, otp)
         return client
 
     def __ensure_entry(self, text, entry, pwd=False):
@@ -49,7 +49,10 @@ class MicaClient:
                 e = input(text + ': ')
         return e
 
-    def credentials(self, user, password):
+    def credentials(self, user, password, otp):
+        if otp:
+            val = input("Enter 6-digits code: ")
+            self.header('X-Obiba-TOTP', val)
         u = self.__ensure_entry('User name', user)
         p = self.__ensure_entry('Password', password, True)
         return self.header('Authorization', 'Basic ' + base64.b64encode((u + ':' + p).encode("utf-8")).decode("utf-8"))
@@ -90,6 +93,7 @@ class MicaClient:
             if argv.get('user') and argv.get('password'):
                 data['user'] = argv['user']
                 data['password'] = argv['password']
+                data['otp'] = argv['otp']
             else:
                 raise Exception('Invalid login information. Requires user and password.')
 
