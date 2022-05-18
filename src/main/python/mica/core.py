@@ -29,7 +29,6 @@ class MicaClient:
     def build(cls, loginInfo):
         return MicaClient.buildWithAuthentication(loginInfo.data['server'], loginInfo.data['user'],
                                                   loginInfo.data['password'], loginInfo.data['otp'])
-        raise Exception('Failed to build Mica Client')
 
     @classmethod
     def buildWithAuthentication(cls, server, user, password, otp):
