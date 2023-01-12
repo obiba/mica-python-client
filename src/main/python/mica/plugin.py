@@ -24,6 +24,10 @@ def add_arguments(parser):
     parser.add_argument('--fetch', '-f', required=False, help='Get the named plugin description.')
     parser.add_argument('--configure', '-c', required=False,
                         help='Configure the plugin site properties. Usually requires to restart the associated service to be effective.')
+    parser.add_argument('--status', '-su', required=False,
+                        help='Get the status of the service associated to the named plugin.')
+    parser.add_argument('--start', '-sa', required=False, help='Start the service associated to the named plugin.')
+    parser.add_argument('--stop', '-so', required=False, help='Stop the service associated to the named plugin.')
     parser.add_argument('--json', '-j', action='store_true', help='Pretty JSON formatting of the response')
 
 
@@ -63,6 +67,12 @@ def do_command(args):
             response = request.delete().resource('/config/plugin/' + args.remove).send()
         elif args.reinstate:
             response = request.put().resource('/config/plugin/' + args.reinstate).send()
+        elif args.status:
+            response = request.get().resource('/config/plugin/' + args.status + '/service').send()
+        elif args.start:
+            response = request.put().resource('/config/plugin/' + args.start + '/service').send()
+        elif args.stop:
+            response = request.delete().resource('/config/plugin/' + args.stop + '/service').send()
 
         # format response
         res = response.content
