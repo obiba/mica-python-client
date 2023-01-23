@@ -43,9 +43,7 @@ def do_command(args):
         if args.verbose:
             request.verbose()
 
-        if args.list:
-            response = request.get().resource('/config/plugins').send()
-        elif args.updates:
+        if args.updates:
             response = request.get().resource('/config/plugins/_updates').send()
         elif args.available:
             response = request.get().resource('/config/plugins/_available').send()
@@ -73,6 +71,8 @@ def do_command(args):
             response = request.put().resource('/config/plugin/' + args.start + '/service').send()
         elif args.stop:
             response = request.delete().resource('/config/plugin/' + args.stop + '/service').send()
+        else:
+            response = request.get().resource('/config/plugins').send()
 
         # format response
         res = response.content

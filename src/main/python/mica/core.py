@@ -145,6 +145,9 @@ class MicaRequest:
     def content_type_json(self):
         return self.content_type('application/json')
 
+    def content_type_text_plain(self):
+        return self.content_type('text/plain')
+
     def content_type_form(self):
         return self.content_type('application/x-www-form-urlencoded')
 
