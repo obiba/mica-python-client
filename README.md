@@ -1,4 +1,4 @@
-# Mica Python [![Build Status](https://travis-ci.org/obiba/mica-python-client.svg?branch=master)](https://travis-ci.org/obiba/mica-python-client)
+# Mica Python [![Build Status](https://app.travis-ci.com/obiba/mica-python-client.svg?branch=master)](https://app.travis-ci.com/github/obiba/mica-python-client)
 
 This Python-based command line tool allows to access to a Mica server through its REST API. This is the perfect tool
 for automating tasks in Mica. This will be the preferred client developed when new features are added to the REST API.
@@ -8,6 +8,12 @@ for automating tasks in Mica. This will be the preferred client developed when n
 * Continuous integration is on [Travis](https://travis-ci.org/obiba/mica-python-client).
 
 ## Usage
+
+Install with:
+
+```
+pip install obiba-mica
+```
 
 To get the options of the command line:
 

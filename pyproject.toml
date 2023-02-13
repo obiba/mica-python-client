@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "obiba-mica"
+version = "5.0.0"
+description = "OBiBa/Mica python client."
+authors = ["Yannick Marcon <yannick.marcon@obiba.org>"]
+license = "GPL-v3"
+readme = "README.md"
+packages = [{include = "obiba_mica"}]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+pycurl = "^7.45.2"
+
+[tool.poetry.scripts]
+mica = 'obiba_mica.console:run'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
