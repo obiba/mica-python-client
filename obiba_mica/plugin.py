@@ -2,6 +2,7 @@
 Mica plugin management.
 """
 
+import sys
 import obiba_mica.core as core
 
 def add_arguments(parser):
