@@ -4,8 +4,8 @@
 import argparse
 import sys
 
-import obiba_mica.file as file
-import obiba_mica.rest as rest
+from obiba_mica.system import PluginService, RESTService
+from obiba_mica.file import FileService
 import obiba_mica.import_zip as import_zip
 import obiba_mica.perm_network as perm_network
 import obiba_mica.perm_project as perm_project
@@ -21,7 +21,6 @@ import obiba_mica.access_collected_dataset as access_collected_dataset
 import obiba_mica.access_harmonized_dataset as access_harmonized_dataset
 import obiba_mica.access_file as access_file
 import obiba_mica.search as search
-import obiba_mica.plugin as plugin
 import obiba_mica.tags as tags
 import obiba_mica.update_collected_dataset as update_collected_dataset
 import obiba_mica.update_collected_datasets as update_collected_datasets
@@ -61,9 +60,8 @@ def run():
     # Add subcommands
     add_subcommand(subparsers, 'import-zip', 'Import data from zip file(s) that have been extracted from old Mica',
                   import_zip.add_arguments, import_zip.do_command)
-    add_subcommand(subparsers, 'file', 'Mica file system actions, for advanced users.', file.add_arguments,
-                  file.do_command)
-
+    add_subcommand(subparsers, 'file', 'Mica file system actions, for advanced users.', FileService.add_arguments,
+                  FileService.do_command)
     add_subcommand(subparsers, 'perm-network', 'Apply permission on a network.',
                   perm_network.add_arguments, perm_network.do_command)
     add_subcommand(subparsers, 'perm-project', 'Apply permission on a research project.',
@@ -103,11 +101,11 @@ def run():
     add_subcommand(subparsers, 'update-collected-datasets', 'Update collected datasets linkage with an Opal table.', update_collected_datasets.add_arguments,
                   update_collected_datasets.do_command)
 
-    add_subcommand(subparsers, 'plugin', 'Manage system plugins.', plugin.add_arguments,
-                  plugin.do_command)
+    add_subcommand(subparsers, 'plugin', 'Manage system plugins.', PluginService.add_arguments,
+                  PluginService.do_command)
 
-    add_subcommand(subparsers, 'rest', 'Request directly the Mica REST API, for advanced users.', rest.add_arguments,
-                  rest.do_command)
+    add_subcommand(subparsers, 'rest', 'Request directly the Mica REST API, for advanced users.', RESTService.add_arguments,
+                  RESTService.do_command)
 
     # Execute selected command
     args = parser.parse_args()

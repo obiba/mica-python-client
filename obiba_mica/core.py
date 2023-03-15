@@ -74,6 +74,13 @@ class MicaClient:
     def new_request(self):
         return MicaRequest(self)
 
+    def close(self):
+        # request to close session
+        try:
+            self.new_request().resource('/auth/session/_current').delete().send()
+        except Exception as e:
+            pass
+
     class LoginInfo:
         data = None
 
@@ -85,14 +92,14 @@ class MicaClient:
             if argv.get('mica'):
                 data['server'] = argv['mica']
             else:
-                raise Exception('Mica server information is missing.')
+                raise ValueError('Mica server information is missing.')
 
             if argv.get('user') and argv.get('password'):
                 data['user'] = argv['user']
                 data['password'] = argv['password']
                 data['otp'] = argv['otp']
             else:
-                raise Exception('Invalid login information. Requires user and password.')
+                raise ValueError('Invalid login information. Requires user and password.')
 
             setattr(cls, 'data', data)
             return cls()
@@ -155,7 +162,7 @@ class MicaRequest:
         elif method in ['GET', 'DELETE', 'PUT', 'POST', 'OPTIONS']:
             self.method = method
         else:
-            raise Exception('Not a valid method: ' + method)
+            raise ValueError('Not a valid method: ' + method)
         return self
 
     def get(self):
@@ -195,7 +202,7 @@ class MicaRequest:
                 path = path + '?' + urllib.parse.urlencode(self.params)
             curl.setopt(pycurl.URL, self.client.base_url + '/ws' + path)
         else:
-            raise Exception('Resource is missing')
+            raise ValueError('Resource is missing')
         return curl
 
     def resource(self, ws):
@@ -303,7 +310,17 @@ class MicaResponse:
         self.content = content
 
     def as_json(self):
-        return json.loads(self.content)
+        if self.content is None:
+            return None
+        else:
+            try:
+                return json.loads(self.content)
+            except Exception as e:
+                if type(self.content) == str:
+                    return self.content
+                else:
+                    # FIXME silently fail
+                    return None
 
     def pretty_json(self):
         return json.dumps(self.as_json(), sort_keys=True, indent=2)
@@ -356,3 +373,21 @@ class UriBuilder:
 
     def build(self):
         return self.__str__()
+
+class HTTPError(Exception):
+    def __init__(self, response: MicaResponse, message: str = None):            
+        # Call the base class constructor with the parameters it needs
+        super().__init__(message if message else 'HTTP Error: %s' % response.code)
+        self.code = response.code
+        http_status = [x for x in list(HTTPStatus) if x.value == response.code][0]
+        self.message = message if message else '%s: %s' % (http_status.phrase, http_status.description)
+        self.error = response.as_json() if response.content else { 'code': response.code, 'status': self.message }
+        # case the reported error is not a dict
+        if type(self.error) != dict:
+            self.error = { 'code': response.code, 'status': self.error }
+
+    def is_client_error(self) -> bool:
+        return self.code >= 400 and self.code < 500
+    
+    def is_server_error(self) -> bool:
+        return self.code >= 500
