@@ -6,6 +6,8 @@ import sys
 
 from obiba_mica.system import PluginService, RESTService
 from obiba_mica.file import FileService
+from obiba_mica.access import ProjectAccess, NetworkAccess, IndividualStudyAccess, HarmonizationInitiativeAccess, CollectedDatasetAccess, HarmonizationProtocolAccess, FileAccess
+
 import obiba_mica.import_zip as import_zip
 import obiba_mica.perm_network as perm_network
 import obiba_mica.perm_project as perm_project
@@ -13,12 +15,6 @@ import obiba_mica.perm_individual_study as perm_individual_study
 import obiba_mica.perm_harmonization_study as perm_harmonization_study
 import obiba_mica.perm_collected_dataset as perm_collected_dataset
 import obiba_mica.perm_harmonized_dataset as perm_harmonized_dataset
-import obiba_mica.access_network as access_network
-import obiba_mica.access_project as access_project
-import obiba_mica.access_individual_study as access_individual_study
-import obiba_mica.access_harmonization_study as access_harmonization_study
-import obiba_mica.access_collected_dataset as access_collected_dataset
-import obiba_mica.access_harmonized_dataset as access_harmonized_dataset
 import obiba_mica.access_file as access_file
 import obiba_mica.search as search
 import obiba_mica.tags as tags
@@ -76,36 +72,36 @@ def run():
                   perm_harmonized_dataset.add_arguments, perm_harmonized_dataset.do_command)
 
     add_subcommand(subparsers, 'access-network', 'Apply access on a network.',
-                  access_network.add_arguments, access_network.do_command)
+                  NetworkAccess.add_arguments, NetworkAccess.do_command)
     add_subcommand(subparsers, 'access-project', 'Apply access on a research project.',
-                  access_project.add_arguments, access_project.do_command)
+                  ProjectAccess.add_arguments, ProjectAccess.do_command)
     add_subcommand(subparsers, 'access-individual-study', 'Apply access on an individual study.',
-                  access_individual_study.add_arguments, access_individual_study.do_command)
-    add_subcommand(subparsers, 'access-harmonization-study', 'Apply access on a harmonization study.',
-                  access_harmonization_study.add_arguments, access_harmonization_study.do_command)
+                  IndividualStudyAccess.add_arguments, IndividualStudyAccess.do_command)
+    add_subcommand(subparsers, 'access-harmonization-initiative', 'Apply access on a harmonization initiative.',
+                  HarmonizationInitiativeAccess.add_arguments, HarmonizationInitiativeAccess.do_command)
     add_subcommand(subparsers, 'access-collected-dataset', 'Apply access on a collected dataset.',
-                  access_collected_dataset.add_arguments, access_collected_dataset.do_command)
-    add_subcommand(subparsers, 'access-harmonized-dataset', 'Apply access on a harmonized dataset.',
-                  access_harmonized_dataset.add_arguments, access_harmonized_dataset.do_command)
+                  CollectedDatasetAccess.add_arguments, CollectedDatasetAccess.do_command)
+    add_subcommand(subparsers, 'access-harmonization-protocol', 'Apply access on a harmonization protocol.',
+                  HarmonizationProtocolAccess.add_arguments, HarmonizationProtocolAccess.do_command)
     add_subcommand(subparsers, 'access-file', 'Apply access on a file.',
-                  access_file.add_arguments, access_file.do_command)
+                  FileAccess.add_arguments, FileAccess.do_command)
 
-    add_subcommand(subparsers, 'search', 'Perform a search query on variables, datasets, studies (including populations and data collection events) and networks.', search.add_arguments,
-                  search.do_command)
+    # add_subcommand(subparsers, 'search', 'Perform a search query on variables, datasets, studies (including populations and data collection events) and networks.', search.add_arguments,
+    #               search.do_command)
 
-    add_subcommand(subparsers, 'tags', 'Extract classification tags from published variables.', tags.add_arguments,
-                  tags.do_command)
+    # add_subcommand(subparsers, 'tags', 'Extract classification tags from published variables.', tags.add_arguments,
+    #               tags.do_command)
 
-    add_subcommand(subparsers, 'update-collected-dataset', 'Update collected dataset linkage with an Opal table.', update_collected_dataset.add_arguments,
-                  update_collected_dataset.do_command)
-    add_subcommand(subparsers, 'update-collected-datasets', 'Update collected datasets linkage with an Opal table.', update_collected_datasets.add_arguments,
-                  update_collected_datasets.do_command)
+    # add_subcommand(subparsers, 'update-collected-dataset', 'Update collected dataset linkage with an Opal table.', update_collected_dataset.add_arguments,
+    #               update_collected_dataset.do_command)
+    # add_subcommand(subparsers, 'update-collected-datasets', 'Update collected datasets linkage with an Opal table.', update_collected_datasets.add_arguments,
+    #               update_collected_datasets.do_command)
 
-    add_subcommand(subparsers, 'plugin', 'Manage system plugins.', PluginService.add_arguments,
-                  PluginService.do_command)
+    # add_subcommand(subparsers, 'plugin', 'Manage system plugins.', PluginService.add_arguments,
+    #               PluginService.do_command)
 
-    add_subcommand(subparsers, 'rest', 'Request directly the Mica REST API, for advanced users.', RESTService.add_arguments,
-                  RESTService.do_command)
+    # add_subcommand(subparsers, 'rest', 'Request directly the Mica REST API, for advanced users.', RESTService.add_arguments,
+    #               RESTService.do_command)
 
     # Execute selected command
     args = parser.parse_args()

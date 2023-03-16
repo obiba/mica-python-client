@@ -4,9 +4,9 @@ Mica file management.
 
 import argparse
 import json
-import obiba_mica.core as core
+from obiba_mica.core import MicaClient
 import urllib.request, urllib.parse, urllib.error
-
+import re
 
 class FileAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -98,8 +98,15 @@ class MicaFileClient(object):
     def upload(self, upload):
         response = self._get_request().content_upload(upload).accept('text/html')\
                 .content_type('multipart/form-data').post().resource('/files/temp').send()
-        location = response.headers['Location'].split('/ws')[1]
-        temp_file = self._get_request().get().resource(location).send().as_json()
+
+        location = None
+        if 'Location' in response.headers:
+          location = response.headers['Location']
+        elif 'location' in response.headers:
+          location = response.headers['location']
+
+        job_resource = re.sub(r'http.*\/ws', r'', location)
+        temp_file = self._get_request().get().resource(job_resource).send().as_json()
         fileName = temp_file.pop('name', '')
         temp_file.update(dict(fileName=fileName,justUploaded=True, path=self.file.path))
 
@@ -114,8 +121,8 @@ class MicaFileClient(object):
         return self._get_request().delete().resource(self.file.get_ws()).send()
 
 class FileService:
-    @classmethod
-    def add_arguments(self, parser):
+    @staticmethod
+    def add_arguments(parser):
         """
         Add file command specific options
         """
@@ -133,13 +140,13 @@ class FileService:
         group.add_argument('--publish', '-pu', action=StoreTrueFileAction, help='Publish a file, requires the file to be in UNDER_REVIEW state')
         group.add_argument('--unpublish', '-un', action=StoreTrueFileAction, help='Unpublish a file')
 
-    @classmethod
-    def do_command(self, args):
+    @staticmethod
+    def do_command(args):
         """
         Execute file command
         """
         # Build and send request
-        client = core.MicaClient.build(core.MicaClient.LoginInfo.parse(args))
+        client = MicaClient.build(MicaClient.LoginInfo.parse(args))
         file = MicaFile(args.path)
         file_client = MicaFileClient(client, file, args.verbose)
         response = getattr(file_client, args._file_cmd)(getattr(args, args._file_cmd)) if hasattr(args, '_file_cmd') else file_client.get()
@@ -148,4 +155,4 @@ class FileService:
         res = response.pretty_json() if args.json and not args.download and not args.upload else response.content
 
         # output to stdout
-        print(res)    
+        print(res)
