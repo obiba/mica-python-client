@@ -3,3 +3,4 @@ from obiba_mica.system import PluginService, RESTService
 from obiba_mica.file import FileService
 from obiba_mica.access import ProjectAccess, NetworkAccess, IndividualStudyAccess, HarmonizationInitiativeAccess, CollectedDatasetAccess, HarmonizationProtocolAccess, FileAccess
 from obiba_mica.perm import ProjectPermission, NetworkPermission, HarmonizationInitiativePermission, HarmonizationProtocolPermission, IndividualStudyPermission, CollectedDatasetPermission
+from obiba_mica.import_zip import FileImportService

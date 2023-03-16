@@ -8,8 +8,8 @@ from obiba_mica.system import PluginService, RESTService
 from obiba_mica.file import FileService
 from obiba_mica.access import ProjectAccess, NetworkAccess, IndividualStudyAccess, HarmonizationInitiativeAccess, CollectedDatasetAccess, HarmonizationProtocolAccess, FileAccess
 from obiba_mica.perm import ProjectPermission, NetworkPermission, HarmonizationInitiativePermission, HarmonizationProtocolPermission, IndividualStudyPermission, CollectedDatasetPermission
+from obiba_mica.import_zip import FileImportService
 
-import obiba_mica.import_zip as import_zip
 import obiba_mica.search as search
 import obiba_mica.tags as tags
 import obiba_mica.update_collected_dataset as update_collected_dataset
@@ -49,7 +49,7 @@ def run():
 
     # Add subcommands
     add_subcommand(subparsers, 'import-zip', 'Import data from zip file(s) that have been extracted from old Mica',
-                  import_zip.add_arguments, import_zip.do_command)
+                  FileImportService.add_arguments, FileImportService.do_command)
     add_subcommand(subparsers, 'file', 'Mica file system actions, for advanced users.', FileService.add_arguments,
                   FileService.do_command)
     add_subcommand(subparsers, 'perm-network', 'Apply permission on a network.',

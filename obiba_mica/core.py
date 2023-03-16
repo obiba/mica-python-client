@@ -375,7 +375,7 @@ class UriBuilder:
         return self.__str__()
 
 class HTTPError(Exception):
-    def __init__(self, response: MicaResponse, message: str = None):            
+    def __init__(self, response: MicaResponse, message: str = None):
         # Call the base class constructor with the parameters it needs
         super().__init__(message if message else 'HTTP Error: %s' % response.code)
         self.code = response.code
@@ -388,6 +388,6 @@ class HTTPError(Exception):
 
     def is_client_error(self) -> bool:
         return self.code >= 400 and self.code < 500
-    
+
     def is_server_error(self) -> bool:
         return self.code >= 500
