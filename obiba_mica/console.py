@@ -7,15 +7,9 @@ import sys
 from obiba_mica.system import PluginService, RESTService
 from obiba_mica.file import FileService
 from obiba_mica.access import ProjectAccess, NetworkAccess, IndividualStudyAccess, HarmonizationInitiativeAccess, CollectedDatasetAccess, HarmonizationProtocolAccess, FileAccess
+from obiba_mica.perm import ProjectPermission, NetworkPermission, HarmonizationInitiativePermission, HarmonizationProtocolPermission, IndividualStudyPermission, CollectedDatasetPermission
 
 import obiba_mica.import_zip as import_zip
-import obiba_mica.perm_network as perm_network
-import obiba_mica.perm_project as perm_project
-import obiba_mica.perm_individual_study as perm_individual_study
-import obiba_mica.perm_harmonization_study as perm_harmonization_study
-import obiba_mica.perm_collected_dataset as perm_collected_dataset
-import obiba_mica.perm_harmonized_dataset as perm_harmonized_dataset
-import obiba_mica.access_file as access_file
 import obiba_mica.search as search
 import obiba_mica.tags as tags
 import obiba_mica.update_collected_dataset as update_collected_dataset
@@ -59,17 +53,17 @@ def run():
     add_subcommand(subparsers, 'file', 'Mica file system actions, for advanced users.', FileService.add_arguments,
                   FileService.do_command)
     add_subcommand(subparsers, 'perm-network', 'Apply permission on a network.',
-                  perm_network.add_arguments, perm_network.do_command)
+                  NetworkPermission.add_arguments, NetworkPermission.do_command)
     add_subcommand(subparsers, 'perm-project', 'Apply permission on a research project.',
-                  perm_project.add_arguments, perm_project.do_command)
+                  ProjectPermission.add_arguments, ProjectPermission.do_command)
     add_subcommand(subparsers, 'perm-individual-study', 'Apply permission on an individual study.',
-                  perm_individual_study.add_arguments, perm_individual_study.do_command)
-    add_subcommand(subparsers, 'perm-harmonization-study', 'Apply permission on a harmonization study.',
-                  perm_harmonization_study.add_arguments, perm_harmonization_study.do_command)
+                  IndividualStudyPermission.add_arguments, IndividualStudyPermission.do_command)
+    add_subcommand(subparsers, 'perm-harmonization-initiative', 'Apply permission on a harmonization initiative.',
+                  HarmonizationInitiativePermission.add_arguments, HarmonizationInitiativePermission.do_command)
     add_subcommand(subparsers, 'perm-collected-dataset', 'Apply permission on a collected dataset.',
-                  perm_collected_dataset.add_arguments, perm_collected_dataset.do_command)
-    add_subcommand(subparsers, 'perm-harmonized-dataset', 'Apply permission on a harmonized dataset.',
-                  perm_harmonized_dataset.add_arguments, perm_harmonized_dataset.do_command)
+                  CollectedDatasetPermission.add_arguments, CollectedDatasetPermission.do_command)
+    add_subcommand(subparsers, 'perm-harmonization-protocol', 'Apply permission on a harmonization protocol.',
+                  HarmonizationProtocolPermission.add_arguments, HarmonizationProtocolPermission.do_command)
 
     add_subcommand(subparsers, 'access-network', 'Apply access on a network.',
                   NetworkAccess.add_arguments, NetworkAccess.do_command)
