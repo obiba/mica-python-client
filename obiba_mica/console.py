@@ -10,8 +10,8 @@ from obiba_mica.access import ProjectAccessService, NetworkAccessService, Indivi
 from obiba_mica.perm import ProjectPermissionService, NetworkPermissionService, HarmonizationInitiativePermissionService, HarmonizationProtocolPermissionService, IndividualStudyPermissionService, CollectedDatasetPermissionService
 from obiba_mica.import_zip import FileImportService
 from obiba_mica.search import SearchService
+from obiba_mica.annotation import AnnotationService
 
-import obiba_mica.tags as tags
 import obiba_mica.update_collected_dataset as update_collected_dataset
 import obiba_mica.update_collected_datasets as update_collected_datasets
 
@@ -83,8 +83,8 @@ def run():
     add_subcommand(subparsers, 'search', 'Perform a search query on variables, datasets, studies (including populations and data collection events) and networks.', SearchService.add_arguments,
                   SearchService.do_command)
 
-    # add_subcommand(subparsers, 'tags', 'Extract classification tags from published variables.', tags.add_arguments,
-    #               tags.do_command)
+    add_subcommand(subparsers, 'annotations', 'Extract classification annotations from published variables.', AnnotationService.add_arguments,
+                  AnnotationService.do_command)
 
     # add_subcommand(subparsers, 'update-collected-dataset', 'Update collected dataset linkage with an Opal table.', update_collected_dataset.add_arguments,
     #               update_collected_dataset.do_command)

@@ -5,3 +5,4 @@ from obiba_mica.access import ProjectAccessService, NetworkAccessService, Indivi
 from obiba_mica.perm import ProjectPermissionService, NetworkPermissionService, HarmonizationInitiativePermissionService, HarmonizationProtocolPermissionService, IndividualStudyPermissionService, CollectedDatasetPermissionService
 from obiba_mica.import_zip import FileImportService
 from obiba_mica.search import SearchService
+from obiba_mica.annotation import AnnotationService
