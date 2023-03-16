@@ -4,7 +4,7 @@ Mica permissions
 
 from obiba_mica.core import UriBuilder, MicaClient
 
-class Access:
+class AccessService:
   """
   Base class for Mica document access management
   """
@@ -31,8 +31,8 @@ class Access:
     if not args.add and not args.delete:
       raise Exception("You must specify an access operation: [--add|-a] or [--delete|-de]")
 
-    if not args.type or args.type.upper() not in Access.SUBJECT_TYPES:
-      raise Exception("Valid subject types are: %s" % ', '.join(Access.SUBJECT_TYPES).lower())
+    if not args.type or args.type.upper() not in AccessService.SUBJECT_TYPES:
+      raise Exception("Valid subject types are: %s" % ', '.join(AccessService.SUBJECT_TYPES).lower())
 
   @classmethod
   def do_ws(cls, args, path):
@@ -87,7 +87,7 @@ class Access:
       if response.code != 204:
           print(response.content)
 
-class ProjectAccess(Access):
+class ProjectAccessService(AccessService):
   """
   Project access management
   """
@@ -97,7 +97,7 @@ class ProjectAccess(Access):
       """
       Add command specific options
       """
-      super(ProjectAccess, cls).add_permission_arguments(parser, True)
+      super(ProjectAccessService, cls).add_permission_arguments(parser, True)
       parser.add_argument('id', help='Research Project ID')
 
   @classmethod
@@ -106,10 +106,10 @@ class ProjectAccess(Access):
       Execute access command
       """
       # Build and send requests
-      super(ProjectAccess, cls).do_command('project', args)
+      super(ProjectAccessService, cls).do_command('project', args)
 
 
-class NetworkAccess(Access):
+class NetworkAccessService(AccessService):
   """
   Network access management
   """
@@ -119,7 +119,7 @@ class NetworkAccess(Access):
       """
       Add command specific options
       """
-      super(NetworkAccess, cls).add_permission_arguments(parser, True)
+      super(NetworkAccessService, cls).add_permission_arguments(parser, True)
       parser.add_argument('id', help='Network ID')
 
   @classmethod
@@ -128,9 +128,9 @@ class NetworkAccess(Access):
       Execute access command
       """
       # Build and send requests
-      super(NetworkAccess, cls).do_command('network', args)
+      super(NetworkAccessService, cls).do_command('network', args)
 
-class IndividualStudyAccess(Access):
+class IndividualStudyAccessService(AccessService):
   """
   Individual Study access management
   """
@@ -140,7 +140,7 @@ class IndividualStudyAccess(Access):
       """
       Add command specific options
       """
-      super(IndividualStudyAccess, cls).add_permission_arguments(parser, True)
+      super(IndividualStudyAccessService, cls).add_permission_arguments(parser, True)
       parser.add_argument('id', help='Individual Study ID')
 
   @classmethod
@@ -149,9 +149,9 @@ class IndividualStudyAccess(Access):
       Execute access command
       """
       # Build and send requests
-      super(IndividualStudyAccess, cls).do_command('individual-study', args)
+      super(IndividualStudyAccessService, cls).do_command('individual-study', args)
 
-class HarmonizationInitiativeAccess(Access):
+class HarmonizationInitiativeAccessService(AccessService):
   """
   Harmonization Initiative access management
   """
@@ -161,7 +161,7 @@ class HarmonizationInitiativeAccess(Access):
       """
       Add command specific options
       """
-      super(HarmonizationInitiativeAccess, cls).add_permission_arguments(parser, True)
+      super(HarmonizationInitiativeAccessService, cls).add_permission_arguments(parser, True)
       parser.add_argument('id', help='Harmonization Initiative ID')
 
   @classmethod
@@ -170,9 +170,9 @@ class HarmonizationInitiativeAccess(Access):
       Execute access command
       """
       # Build and send requests
-      super(HarmonizationInitiativeAccess, cls).do_command('harmonization-study', args)
+      super(HarmonizationInitiativeAccessService, cls).do_command('harmonization-study', args)
 
-class CollectedDatasetAccess(Access):
+class CollectedDatasetAccessService(AccessService):
   """
   Collected Dataset access management
   """
@@ -182,7 +182,7 @@ class CollectedDatasetAccess(Access):
       """
       Add command specific options
       """
-      super(CollectedDatasetAccess, cls).add_permission_arguments(parser, True)
+      super(CollectedDatasetAccessService, cls).add_permission_arguments(parser, True)
       parser.add_argument('id', help='Collected Dataset ID')
 
   @classmethod
@@ -191,9 +191,9 @@ class CollectedDatasetAccess(Access):
       Execute access command
       """
       # Build and send requests
-      super(CollectedDatasetAccess, cls).do_command('collected-dataset', args)
+      super(CollectedDatasetAccessService, cls).do_command('collected-dataset', args)
 
-class HarmonizationProtocolAccess(Access):
+class HarmonizationProtocolAccessService(AccessService):
   """
   Harmonization Protocol access management
   """
@@ -203,7 +203,7 @@ class HarmonizationProtocolAccess(Access):
       """
       Add command specific options
       """
-      super(HarmonizationProtocolAccess, cls).add_permission_arguments(parser, True)
+      super(HarmonizationProtocolAccessService, cls).add_permission_arguments(parser, True)
       parser.add_argument('id', help='Harmonization Protocol ID')
 
   @classmethod
@@ -212,9 +212,9 @@ class HarmonizationProtocolAccess(Access):
       Execute access command
       """
       # Build and send requests
-      super(HarmonizationProtocolAccess, cls).do_command('harmonized-dataset', args)
+      super(HarmonizationProtocolAccessService, cls).do_command('harmonized-dataset', args)
 
-class FileAccess(Access):
+class FileAccessService(AccessService):
   """
   file access management
   """
@@ -224,7 +224,7 @@ class FileAccess(Access):
     path = args.path
     while path.startswith('/'):
       path = path[1:]
-      
+
     return ['draft', resource, path]
 
   @classmethod
@@ -232,7 +232,7 @@ class FileAccess(Access):
       """
       Add command specific options
       """
-      super(FileAccess, cls).add_permission_arguments(parser, False)
+      super(FileAccessService, cls).add_permission_arguments(parser, False)
       parser.add_argument('path', help='File path in Mica file system')
 
   @classmethod
@@ -241,4 +241,4 @@ class FileAccess(Access):
       Execute access command
       """
       # Build and send requests
-      super(FileAccess, cls).do_command('file-access', args)
+      super(FileAccessService, cls).do_command('file-access', args)

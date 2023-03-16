@@ -4,7 +4,7 @@ Mica permissions
 
 from obiba_mica.core import UriBuilder, MicaClient
 
-class Permission:
+class PermissionService:
   SUBJECT_TYPES = ('USER', 'GROUP')
   PERMISSIONS = ('READER', 'EDITOR', 'REVIEWER')
 
@@ -15,7 +15,7 @@ class Permission:
     """
     parser.add_argument('--add', '-a', action='store_true', help='Add a permission')
     parser.add_argument('--delete', '-d', action='store_true', required=False, help='Delete a permission')
-    parser.add_argument('--permission', '-pe', help="Permission to apply: %s" % ', '.join(Permission.PERMISSIONS).lower())
+    parser.add_argument('--permission', '-pe', help="Permission to apply: %s" % ', '.join(PermissionService.PERMISSIONS).lower())
     parser.add_argument('--subject', '-s', required=True, help='Subject name to which the permission will be granted')
     parser.add_argument('--type', '-ty', required=False, help='Subject type: user or group')
 
@@ -24,7 +24,7 @@ class Permission:
     """
     Map permission argument to permission query parameter
     """
-    if permission.upper() not in Permission.PERMISSIONS:
+    if permission.upper() not in PermissionService.PERMISSIONS:
       return None
 
     return permission.upper()
@@ -39,12 +39,12 @@ class Permission:
 
     if args.add:
       if not args.permission:
-        raise Exception("A permission name is required: %s" % ', '.join(Permission.PERMISSIONS).lower())
+        raise Exception("A permission name is required: %s" % ', '.join(PermissionService.PERMISSIONS).lower())
       if cls.map_permission(args.permission) is None:
-        raise Exception("Valid permissions are: %s" % ', '.join(Permission.PERMISSIONS).lower())
+        raise Exception("Valid permissions are: %s" % ', '.join(PermissionService.PERMISSIONS).lower())
 
-    if not args.type or args.type.upper() not in Permission.SUBJECT_TYPES:
-      raise Exception("Valid subject types are: %s" % ', '.join(Permission.SUBJECT_TYPES).lower())
+    if not args.type or args.type.upper() not in PermissionService.SUBJECT_TYPES:
+      raise Exception("Valid subject types are: %s" % ', '.join(PermissionService.SUBJECT_TYPES).lower())
 
   @classmethod
   def do_ws(cls, args, path):
@@ -94,7 +94,7 @@ class Permission:
           print(response.content)
 
 
-class ProjectPermission(Permission):
+class ProjectPermissionService(PermissionService):
   """
   Apply permissions on a research project.
   """
@@ -104,14 +104,14 @@ class ProjectPermission(Permission):
       """
       Add command specific options
       """
-      super(ProjectPermission, cls).add_permission_arguments(parser)
+      super(ProjectPermissionService, cls).add_permission_arguments(parser)
       parser.add_argument('id', help='Research Project ID')
 
   @classmethod
   def do_command(cls, args):
-    super(ProjectPermission, cls).do_command('project', args)
+    super(ProjectPermissionService, cls).do_command('project', args)
 
-class NetworkPermission(Permission):
+class NetworkPermissionService(PermissionService):
   """
   Apply permissions on a network.
   """
@@ -121,14 +121,14 @@ class NetworkPermission(Permission):
       """
       Add command specific options
       """
-      super(NetworkPermission, cls).add_permission_arguments(parser)
+      super(NetworkPermissionService, cls).add_permission_arguments(parser)
       parser.add_argument('id', help='Network ID')
 
   @classmethod
   def do_command(cls, args):
-    super(NetworkPermission, cls).do_command('network', args)
+    super(NetworkPermissionService, cls).do_command('network', args)
 
-class IndividualStudyPermission(Permission):
+class IndividualStudyPermissionService(PermissionService):
   """
   Apply permissions on a individual study.
   """
@@ -138,15 +138,15 @@ class IndividualStudyPermission(Permission):
       """
       Add command specific options
       """
-      super(IndividualStudyPermission, cls).add_permission_arguments(parser)
+      super(IndividualStudyPermissionService, cls).add_permission_arguments(parser)
       parser.add_argument('id', help='Individual Study ID')
 
   @classmethod
   def do_command(cls, args):
-    super(IndividualStudyPermission, cls).do_command('individual-study', args)
+    super(IndividualStudyPermissionService, cls).do_command('individual-study', args)
 
 
-class HarmonizationInitiativePermission(Permission):
+class HarmonizationInitiativePermissionService(PermissionService):
   """
   Apply permissions on a harmonization initiative.
   """
@@ -156,14 +156,14 @@ class HarmonizationInitiativePermission(Permission):
       """
       Add command specific options
       """
-      super(HarmonizationInitiativePermission, cls).add_permission_arguments(parser)
+      super(HarmonizationInitiativePermissionService, cls).add_permission_arguments(parser)
       parser.add_argument('id', help='Harmonization Initiative ID')
 
   @classmethod
   def do_command(cls, args):
-    super(HarmonizationInitiativePermission, cls).do_command('harmonization-study', args)
+    super(HarmonizationInitiativePermissionService, cls).do_command('harmonization-study', args)
 
-class HarmonizationProtocolPermission(Permission):
+class HarmonizationProtocolPermissionService(PermissionService):
   """
   Apply permissions on a harmonization protocol.
   """
@@ -173,14 +173,14 @@ class HarmonizationProtocolPermission(Permission):
       """
       Add command specific options
       """
-      super(HarmonizationProtocolPermission, cls).add_permission_arguments(parser)
+      super(HarmonizationProtocolPermissionService, cls).add_permission_arguments(parser)
       parser.add_argument('id', help='Harmonization Protocol ID')
 
   @classmethod
   def do_command(cls, args):
-    super(HarmonizationProtocolPermission, cls).do_command('harmonized-dataset', args)
+    super(HarmonizationProtocolPermissionService, cls).do_command('harmonized-dataset', args)
 
-class CollectedDatasetPermission(Permission):
+class CollectedDatasetPermissionService(PermissionService):
   """
   Apply permissions on a collected dataset.
   """
@@ -190,9 +190,9 @@ class CollectedDatasetPermission(Permission):
       """
       Add command specific options
       """
-      super(CollectedDatasetPermission, cls).add_permission_arguments(parser)
+      super(CollectedDatasetPermissionService, cls).add_permission_arguments(parser)
       parser.add_argument('id', help='Collected Dataset ID')
 
   @classmethod
   def do_command(cls, args):
-    super(CollectedDatasetPermission, cls).do_command('collected-dataset', args)
+    super(CollectedDatasetPermissionService, cls).do_command('collected-dataset', args)

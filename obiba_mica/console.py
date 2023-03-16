@@ -6,11 +6,11 @@ import sys
 
 from obiba_mica.system import PluginService, RESTService
 from obiba_mica.file import FileService
-from obiba_mica.access import ProjectAccess, NetworkAccess, IndividualStudyAccess, HarmonizationInitiativeAccess, CollectedDatasetAccess, HarmonizationProtocolAccess, FileAccess
-from obiba_mica.perm import ProjectPermission, NetworkPermission, HarmonizationInitiativePermission, HarmonizationProtocolPermission, IndividualStudyPermission, CollectedDatasetPermission
+from obiba_mica.access import ProjectAccessService, NetworkAccessService, IndividualStudyAccessService, HarmonizationInitiativeAccessService, CollectedDatasetAccessService, HarmonizationProtocolAccessService, FileAccessService
+from obiba_mica.perm import ProjectPermissionService, NetworkPermissionService, HarmonizationInitiativePermissionService, HarmonizationProtocolPermissionService, IndividualStudyPermissionService, CollectedDatasetPermissionService
 from obiba_mica.import_zip import FileImportService
+from obiba_mica.search import SearchService
 
-import obiba_mica.search as search
 import obiba_mica.tags as tags
 import obiba_mica.update_collected_dataset as update_collected_dataset
 import obiba_mica.update_collected_datasets as update_collected_datasets
@@ -53,35 +53,35 @@ def run():
     add_subcommand(subparsers, 'file', 'Mica file system actions, for advanced users.', FileService.add_arguments,
                   FileService.do_command)
     add_subcommand(subparsers, 'perm-network', 'Apply permission on a network.',
-                  NetworkPermission.add_arguments, NetworkPermission.do_command)
+                  NetworkPermissionService.add_arguments, NetworkPermissionService.do_command)
     add_subcommand(subparsers, 'perm-project', 'Apply permission on a research project.',
-                  ProjectPermission.add_arguments, ProjectPermission.do_command)
+                  ProjectPermissionService.add_arguments, ProjectPermissionService.do_command)
     add_subcommand(subparsers, 'perm-individual-study', 'Apply permission on an individual study.',
-                  IndividualStudyPermission.add_arguments, IndividualStudyPermission.do_command)
+                  IndividualStudyPermissionService.add_arguments, IndividualStudyPermissionService.do_command)
     add_subcommand(subparsers, 'perm-harmonization-initiative', 'Apply permission on a harmonization initiative.',
-                  HarmonizationInitiativePermission.add_arguments, HarmonizationInitiativePermission.do_command)
+                  HarmonizationInitiativePermissionService.add_arguments, HarmonizationInitiativePermissionService.do_command)
     add_subcommand(subparsers, 'perm-collected-dataset', 'Apply permission on a collected dataset.',
-                  CollectedDatasetPermission.add_arguments, CollectedDatasetPermission.do_command)
+                  CollectedDatasetPermissionService.add_arguments, CollectedDatasetPermissionService.do_command)
     add_subcommand(subparsers, 'perm-harmonization-protocol', 'Apply permission on a harmonization protocol.',
-                  HarmonizationProtocolPermission.add_arguments, HarmonizationProtocolPermission.do_command)
+                  HarmonizationProtocolPermissionService.add_arguments, HarmonizationProtocolPermissionService.do_command)
 
     add_subcommand(subparsers, 'access-network', 'Apply access on a network.',
-                  NetworkAccess.add_arguments, NetworkAccess.do_command)
+                  NetworkAccessService.add_arguments, NetworkAccessService.do_command)
     add_subcommand(subparsers, 'access-project', 'Apply access on a research project.',
-                  ProjectAccess.add_arguments, ProjectAccess.do_command)
+                  ProjectAccessService.add_arguments, ProjectAccessService.do_command)
     add_subcommand(subparsers, 'access-individual-study', 'Apply access on an individual study.',
-                  IndividualStudyAccess.add_arguments, IndividualStudyAccess.do_command)
+                  IndividualStudyAccessService.add_arguments, IndividualStudyAccessService.do_command)
     add_subcommand(subparsers, 'access-harmonization-initiative', 'Apply access on a harmonization initiative.',
-                  HarmonizationInitiativeAccess.add_arguments, HarmonizationInitiativeAccess.do_command)
+                  HarmonizationInitiativeAccessService.add_arguments, HarmonizationInitiativeAccessService.do_command)
     add_subcommand(subparsers, 'access-collected-dataset', 'Apply access on a collected dataset.',
-                  CollectedDatasetAccess.add_arguments, CollectedDatasetAccess.do_command)
+                  CollectedDatasetAccessService.add_arguments, CollectedDatasetAccessService.do_command)
     add_subcommand(subparsers, 'access-harmonization-protocol', 'Apply access on a harmonization protocol.',
-                  HarmonizationProtocolAccess.add_arguments, HarmonizationProtocolAccess.do_command)
+                  HarmonizationProtocolAccessService.add_arguments, HarmonizationProtocolAccessService.do_command)
     add_subcommand(subparsers, 'access-file', 'Apply access on a file.',
-                  FileAccess.add_arguments, FileAccess.do_command)
+                  FileAccessService.add_arguments, FileAccessService.do_command)
 
-    # add_subcommand(subparsers, 'search', 'Perform a search query on variables, datasets, studies (including populations and data collection events) and networks.', search.add_arguments,
-    #               search.do_command)
+    add_subcommand(subparsers, 'search', 'Perform a search query on variables, datasets, studies (including populations and data collection events) and networks.', SearchService.add_arguments,
+                  SearchService.do_command)
 
     # add_subcommand(subparsers, 'tags', 'Extract classification tags from published variables.', tags.add_arguments,
     #               tags.do_command)
