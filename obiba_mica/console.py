@@ -4,16 +4,16 @@
 import argparse
 import sys
 
-from obiba_mica.system import PluginService, RESTService
+from obiba_mica.system import PluginService, RestService
 from obiba_mica.file import FileService
 from obiba_mica.access import ProjectAccessService, NetworkAccessService, IndividualStudyAccessService, HarmonizationInitiativeAccessService, CollectedDatasetAccessService, HarmonizationProtocolAccessService, FileAccessService
 from obiba_mica.perm import ProjectPermissionService, NetworkPermissionService, HarmonizationInitiativePermissionService, HarmonizationProtocolPermissionService, IndividualStudyPermissionService, CollectedDatasetPermissionService
 from obiba_mica.import_zip import FileImportService
 from obiba_mica.search import SearchService
 from obiba_mica.annotation import AnnotationService
-
-import obiba_mica.update_collected_dataset as update_collected_dataset
-import obiba_mica.update_collected_datasets as update_collected_datasets
+from obiba_mica.plugin import PluginService
+from obiba_mica.update_collected_dataset import CollectedDatasetService
+from obiba_mica.update_collected_datasets import CollectedDatasetsService
 
 def add_mica_arguments(parser):
     """
@@ -86,16 +86,16 @@ def run():
     add_subcommand(subparsers, 'annotations', 'Extract classification annotations from published variables.', AnnotationService.add_arguments,
                   AnnotationService.do_command)
 
-    # add_subcommand(subparsers, 'update-collected-dataset', 'Update collected dataset linkage with an Opal table.', update_collected_dataset.add_arguments,
-    #               update_collected_dataset.do_command)
-    # add_subcommand(subparsers, 'update-collected-datasets', 'Update collected datasets linkage with an Opal table.', update_collected_datasets.add_arguments,
-    #               update_collected_datasets.do_command)
+    add_subcommand(subparsers, 'update-collected-dataset', 'Update collected dataset linkage with an Opal table.', CollectedDatasetService.add_arguments,
+                  CollectedDatasetService.do_command)
+    add_subcommand(subparsers, 'update-collected-datasets', 'Update collected datasets linkage with an Opal table.', CollectedDatasetsService.add_arguments,
+                  CollectedDatasetsService.do_command)
 
-    # add_subcommand(subparsers, 'plugin', 'Manage system plugins.', PluginService.add_arguments,
-    #               PluginService.do_command)
+    add_subcommand(subparsers, 'plugin', 'Manage system plugins.', PluginService.add_arguments,
+                  PluginService.do_command)
 
-    # add_subcommand(subparsers, 'rest', 'Request directly the Mica REST API, for advanced users.', RESTService.add_arguments,
-    #               RESTService.do_command)
+    add_subcommand(subparsers, 'rest', 'Request directly the Mica REST API, for advanced users.', RestService.add_arguments,
+                  RestService.do_command)
 
     # Execute selected command
     args = parser.parse_args()
