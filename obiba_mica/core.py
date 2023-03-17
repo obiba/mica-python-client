@@ -9,6 +9,7 @@ import base64
 import json
 import os.path
 import getpass
+from http import HTTPStatus
 import urllib.request, urllib.parse, urllib.error
 from functools import reduce
 
@@ -115,6 +116,7 @@ class MicaRequest:
         self.headers = {'Accept': 'application/json'}
         self._verbose = False
         self.params = None
+        self._fail_on_error = False
 
     def curl_option(self, opt, value):
         self.curl_options[opt] = value
@@ -131,7 +133,9 @@ class MicaRequest:
         return self.curl_option(pycurl.VERBOSE, True)
 
     def fail_on_error(self):
-        return self.curl_option(pycurl.FAILONERROR, True)
+        #return self.curl_option(pycurl.FAILONERROR, True)
+        self._fail_on_error = True
+        return self
 
     def header(self, key, value):
         if value:
@@ -254,6 +258,9 @@ class MicaRequest:
         curl.perform()
         response = MicaResponse(curl.getinfo(pycurl.HTTP_CODE), hbuf.headers, cbuf.content)
         curl.close()
+
+        if self._fail_on_error and response.code >= 400:
+            raise HTTPError(response)
 
         return response
 

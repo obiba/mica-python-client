@@ -4,7 +4,7 @@
 import argparse
 import sys
 
-from obiba_mica.system import PluginService, RestService
+from obiba_mica.rest import RestService
 from obiba_mica.file import FileService
 from obiba_mica.access import ProjectAccessService, NetworkAccessService, IndividualStudyAccessService, HarmonizationInitiativeAccessService, CollectedDatasetAccessService, HarmonizationProtocolAccessService, FileAccessService
 from obiba_mica.perm import ProjectPermissionService, NetworkPermissionService, HarmonizationInitiativePermissionService, HarmonizationProtocolPermissionService, IndividualStudyPermissionService, CollectedDatasetPermissionService
