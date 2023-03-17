@@ -29,3 +29,5 @@ coverage
 
 .history
 __pycache__
+
+debug.py
