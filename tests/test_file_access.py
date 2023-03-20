@@ -10,7 +10,6 @@ class TestClass(unittest.TestCase):
 
   def test_addFileAccess(self):
     try:
-      self.setup_class()
       args = Utils.parse_arg_values(parser=self.parser,params=['--type', 'USER', '--subject', 'user1', '--add', '/individual-study/cls/population/1/data-collection-event/4/Wave 4 subject interview.pdf'])
       FileAccessService.do_command(args)
       assert True
@@ -19,7 +18,6 @@ class TestClass(unittest.TestCase):
 
   def test_listDocumentAccess(self):
     try:
-      self.setup_class()
       args = Utils.parse_arg_values(parser=self.parser,params=['--list', '/individual-study/cls/population/1/data-collection-event/4/Wave 4 subject interview.pdf'])
       response = FileAccessService.do_command_internal(args).as_json()
       found = next((x for x in response if x['principal'] == 'user1'), None)

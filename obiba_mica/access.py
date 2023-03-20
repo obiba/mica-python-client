@@ -128,7 +128,7 @@ class ProjectAccessService(AccessService):
 
   @classmethod
   def do_command_internal(cls, args):
-      super(ProjectAccessService, cls).do_command_internal(args)
+      return super(ProjectAccessService, cls).do_command_internal(args)
 
   @classmethod
   def do_command(cls, args):
@@ -158,7 +158,7 @@ class NetworkAccessService(AccessService):
 
   @classmethod
   def do_command_internal(cls, args):
-      super(NetworkAccessService, cls).do_command_internal(args)
+      return super(NetworkAccessService, cls).do_command_internal(args)
 
   @classmethod
   def do_command(cls, args):

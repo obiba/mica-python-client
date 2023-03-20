@@ -15,8 +15,9 @@ class PermissionService:
     """
     parser.add_argument('--add', '-a', action='store_true', help='Add a permission')
     parser.add_argument('--delete', '-d', action='store_true', required=False, help='Delete a permission')
+    parser.add_argument('--list', '-ls', action='store_true', required=False, help='List permissions')
     parser.add_argument('--permission', '-pe', help="Permission to apply: %s" % ', '.join(PermissionService.PERMISSIONS).lower())
-    parser.add_argument('--subject', '-s', required=True, help='Subject name to which the permission will be granted')
+    parser.add_argument('--subject', '-s', required=False, help='Subject name to which the permission will be granted')
     parser.add_argument('--type', '-ty', required=False, help='Subject type: user or group')
 
   @classmethod
@@ -34,7 +35,7 @@ class PermissionService:
     """
     Validate action, permission and subject type
     """
-    if not args.add and not args.delete:
+    if not args.add and not args.delete and not args.list:
       raise Exception("You must specify a permission operation: [--add|-a] or [--delete|-de]")
 
     if args.add:
@@ -43,8 +44,12 @@ class PermissionService:
       if cls.map_permission(args.permission) is None:
         raise Exception("Valid permissions are: %s" % ', '.join(PermissionService.PERMISSIONS).lower())
 
-    if not args.type or args.type.upper() not in PermissionService.SUBJECT_TYPES:
-      raise Exception("Valid subject types are: %s" % ', '.join(PermissionService.SUBJECT_TYPES).lower())
+    if not args.list:
+      if not args.subject:
+        raise Exception("You must specify a subject, a user or a group")
+
+      if not args.type or args.type.upper() not in PermissionService.SUBJECT_TYPES:
+        raise Exception("Valid subject types are: %s" % ', '.join(PermissionService.SUBJECT_TYPES).lower())
 
   @classmethod
   def do_ws(cls, args, path):
@@ -64,34 +69,49 @@ class PermissionService:
         .query('principal', args.subject) \
         .build()
 
+    if args.list:
+      return UriBuilder(path) \
+        .build()
+
   @classmethod
   def getResourcePathParts(cls, resource, args):
      return ['draft', resource, args.id, 'permissions']
 
   @classmethod
-  def do_command(cls, resource, args):
-      """
-      Execute permission command
-      """
-      # Build and send requests
-      cls.validate_args(args)
+  def get_resource_name(cls):
+     pass
 
-      request = MicaClient.build(MicaClient.LoginInfo.parse(args)).new_request()
+  @classmethod
+  def do_command_internal(cls, args):
+    """
+    Execute permission command
+    """
+    # Build and send requests
+    cls.validate_args(args)
 
-      if args.verbose:
-          request.verbose()
+    request = MicaClient.build(MicaClient.LoginInfo.parse(args)).new_request()
 
-      # send request
-      if args.delete:
-          request.delete()
-      else:
-          request.put()
+    if args.verbose:
+        request.verbose()
 
-      response = request.resource(cls.do_ws(args, cls.getResourcePathParts(resource, args))).send()
 
-      # format response
-      if response.code != 204:
-          print(response.content)
+    # send request
+    if args.delete:
+        request.delete()
+    elif args.add:
+        request.put()
+    else:
+        request.get()
+
+    return request.resource(cls.do_ws(args, cls.getResourcePathParts(cls.get_resource_name(), args))).send()
+
+  @classmethod
+  def do_command(cls, args):
+    response = cls.do_command_internal(args)
+
+    # format response
+    if response.code != 204:
+        print(response.content)
 
 
 class ProjectPermissionService(PermissionService):
@@ -107,9 +127,18 @@ class ProjectPermissionService(PermissionService):
       super(ProjectPermissionService, cls).add_permission_arguments(parser)
       parser.add_argument('id', help='Research Project ID')
 
+
+  @classmethod
+  def get_resource_name(cls):
+     return 'project'
+
+  @classmethod
+  def do_command_internal(cls, args):
+      return super(ProjectPermissionService, cls).do_command_internal(args)
+
   @classmethod
   def do_command(cls, args):
-    super(ProjectPermissionService, cls).do_command('project', args)
+    super(ProjectPermissionService, cls).do_command(args)
 
 class NetworkPermissionService(PermissionService):
   """
@@ -125,8 +154,16 @@ class NetworkPermissionService(PermissionService):
       parser.add_argument('id', help='Network ID')
 
   @classmethod
+  def get_resource_name(cls):
+     return 'network'
+
+  @classmethod
+  def do_command_internal(cls, args):
+      return super(NetworkPermissionService, cls).do_command_internal(args)
+
+  @classmethod
   def do_command(cls, args):
-    super(NetworkPermissionService, cls).do_command('network', args)
+    super(NetworkPermissionService, cls).do_command(args)
 
 class IndividualStudyPermissionService(PermissionService):
   """
@@ -142,8 +179,16 @@ class IndividualStudyPermissionService(PermissionService):
       parser.add_argument('id', help='Individual Study ID')
 
   @classmethod
+  def get_resource_name(cls):
+     return 'individual-study'
+
+  @classmethod
+  def do_command_internal(cls, args):
+      return super(IndividualStudyPermissionService, cls).do_command_internal(args)
+
+  @classmethod
   def do_command(cls, args):
-    super(IndividualStudyPermissionService, cls).do_command('individual-study', args)
+    return super(IndividualStudyPermissionService, cls).do_command(args)
 
 
 class HarmonizationInitiativePermissionService(PermissionService):
@@ -159,9 +204,18 @@ class HarmonizationInitiativePermissionService(PermissionService):
       super(HarmonizationInitiativePermissionService, cls).add_permission_arguments(parser)
       parser.add_argument('id', help='Harmonization Initiative ID')
 
+
+  @classmethod
+  def get_resource_name(cls):
+     return 'harmonization-study'
+
+  @classmethod
+  def do_command_internal(cls, args):
+      return super(HarmonizationInitiativePermissionService, cls).do_command_internal(args)
+
   @classmethod
   def do_command(cls, args):
-    super(HarmonizationInitiativePermissionService, cls).do_command('harmonization-study', args)
+    super(HarmonizationInitiativePermissionService, cls).do_command(args)
 
 class HarmonizationProtocolPermissionService(PermissionService):
   """
@@ -177,8 +231,16 @@ class HarmonizationProtocolPermissionService(PermissionService):
       parser.add_argument('id', help='Harmonization Protocol ID')
 
   @classmethod
+  def get_resource_name(cls):
+     return 'harmonized-dataset'
+
+  @classmethod
+  def do_command_internal(cls, args):
+      return super(HarmonizationProtocolPermissionService, cls).do_command_internal(args)
+
+  @classmethod
   def do_command(cls, args):
-    super(HarmonizationProtocolPermissionService, cls).do_command('harmonized-dataset', args)
+    super(HarmonizationProtocolPermissionService, cls).do_command(args)
 
 class CollectedDatasetPermissionService(PermissionService):
   """
@@ -193,6 +255,15 @@ class CollectedDatasetPermissionService(PermissionService):
       super(CollectedDatasetPermissionService, cls).add_permission_arguments(parser)
       parser.add_argument('id', help='Collected Dataset ID')
 
+
+  @classmethod
+  def get_resource_name(cls):
+     return 'collected-dataset'
+
+  @classmethod
+  def do_command_internal(cls, args):
+      return super(CollectedDatasetPermissionService, cls).do_command_internal(args)
+
   @classmethod
   def do_command(cls, args):
-    super(CollectedDatasetPermissionService, cls).do_command('collected-dataset', args)
+    super(CollectedDatasetPermissionService, cls).do_command(args)

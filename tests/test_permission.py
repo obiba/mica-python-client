@@ -1,25 +1,25 @@
 import unittest
-from obiba_mica.access import IndividualStudyAccessService
+from obiba_mica.perm import IndividualStudyPermissionService
 from tests.utils import Utils
 
 class TestClass(unittest.TestCase):
 
   def setup_class(self):
     self.parser = Utils.make_arg_parser()
-    IndividualStudyAccessService.add_arguments(self.parser)
+    IndividualStudyPermissionService.add_arguments(self.parser)
 
-  def test_addDocumentAccess(self):
+  def test_addDocumentPermission(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--type', 'USER', '--subject', 'user1', '--add', 'clsa'])
-      IndividualStudyAccessService.do_command(args)
+      args = Utils.parse_arg_values(parser=self.parser,params=['--type', 'USER', '--subject', 'user1', '--permission', 'READER', '--add', 'clsa'])
+      IndividualStudyPermissionService.do_command(args)
       assert True
     except Exception as e:
       assert False
 
-  def test_listDocumentAccess(self):
+  def test_listDocumentPermission(self):
     try:
       args = Utils.parse_arg_values(parser=self.parser,params=['--list', 'clsa'])
-      response = IndividualStudyAccessService.do_command_internal(args).as_json()
+      response = IndividualStudyPermissionService.do_command_internal(args).as_json()
       found = next((x for x in response if x['principal'] == 'user1'), None)
 
       if found is None:
@@ -29,10 +29,10 @@ class TestClass(unittest.TestCase):
     except Exception as e:
       assert False
 
-  def test_removeDocumentAccess(self):
+  def test_removeDocumentPermission(self):
     try:
       args = Utils.parse_arg_values(parser=self.parser,params=['--type', 'USER', '--subject', 'user1', '--delete', 'clsa'])
-      IndividualStudyAccessService.do_command(args)
+      IndividualStudyPermissionService.do_command(args)
       assert True
     except Exception as e:
       assert False
