@@ -381,20 +381,47 @@ class UriBuilder:
     def build(self):
         return self.__str__()
 
+class MicaService:
+  def __init__(self, client: MicaClient,  verbose: bool = False):
+    self.client = client
+    self.verbose = verbose
+
+  def _make_request(self, fail_safe: bool = False):
+    request = self.client.new_request()
+    if not fail_safe:
+        request.fail_on_error()
+    if self.verbose:
+        request.verbose()
+    return request
+
 class HTTPError(Exception):
-    def __init__(self, response: MicaResponse, message: str = None):
-        # Call the base class constructor with the parameters it needs
-        super().__init__(message if message else 'HTTP Error: %s' % response.code)
-        self.code = response.code
-        http_status = [x for x in list(HTTPStatus) if x.value == response.code][0]
-        self.message = message if message else '%s: %s' % (http_status.phrase, http_status.description)
-        self.error = response.as_json() if response.content else { 'code': response.code, 'status': self.message }
-        # case the reported error is not a dict
-        if type(self.error) != dict:
-            self.error = { 'code': response.code, 'status': self.error }
+  def __init__(self, response: MicaResponse, message: str = None):
+      # Call the base class constructor with the parameters it needs
+      super().__init__(message if message else 'HTTP Error: %s' % response.code)
+      self.code = response.code
+      http_status = [x for x in list(HTTPStatus) if x.value == response.code][0]
+      self.message = message if message else '%s: %s' % (http_status.phrase, http_status.description)
+      self.error = response.as_json() if response.content else { 'code': response.code, 'status': self.message }
+      # case the reported error is not a dict
+      if type(self.error) != dict:
+          self.error = { 'code': response.code, 'status': self.error }
 
-    def is_client_error(self) -> bool:
-        return self.code >= 400 and self.code < 500
+  def is_client_error(self) -> bool:
+      return self.code >= 400 and self.code < 500
 
-    def is_server_error(self) -> bool:
-        return self.code >= 500
+  def is_server_error(self) -> bool:
+      return self.code >= 500
+
+class Formatter:
+
+    @classmethod
+    def to_json(self, data: any, pretty: bool = False):
+        if pretty:
+            return json.dumps(data, sort_keys=True, indent=2)
+        else:
+            return json.dumps(data, sort_keys=True)
+
+    @classmethod
+    def print_json(self, data: any, pretty: bool = False):
+        if data is not None:
+            print(self.to_json(data, pretty))

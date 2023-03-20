@@ -3,6 +3,8 @@ from obiba_mica.plugin import PluginService
 from tests.utils import Utils
 
 class TestClass(unittest.TestCase):
+  __test__ = False # This test needs Mica to restart for each action, only useful for manual and controlled tests
+
 
   def setup_class(self):
     self.parser = Utils.make_arg_parser()
