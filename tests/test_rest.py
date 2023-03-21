@@ -5,13 +5,16 @@ from tests.utils import Utils
 class TestClass(unittest.TestCase):
 
   def setup_class(self):
-    self.parser = Utils.make_arg_parser()
-    RestService.add_arguments(self.parser)
+    client = Utils.make_client()
+    self.service = RestService(client)
+    # RestService.add_arguments(self.parser)
 
   def test_validRestCall(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['/draft/individual-studies'])
-      RestService.do_command(args)
+      response = self.service.send_get_request('/draft/individual-study/clsa').as_json()
+      if response['id'] != 'clsa':
+        assert False
+
       assert True
     except Exception as e:
       assert False

@@ -5,154 +5,177 @@ Mica file management.
 import argparse
 import json
 from obiba_mica.core import MicaClient
-import urllib.request, urllib.parse, urllib.error
+import urllib.request
+import urllib.parse
+import urllib.error
 import re
 
+
 class FileAction(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, '_file_cmd', self.dest)
-        setattr(namespace, self.dest, values)
+  def __call__(self, parser, namespace, values, option_string=None):
+    setattr(namespace, '_file_cmd', self.dest)
+    setattr(namespace, self.dest, values)
 
 
 class StoreTrueFileAction(FileAction):
-    def __init__(self, *args, **kwargs):
-        kwargs.update(dict(nargs=0, const=True))
-        super(StoreTrueFileAction, self).__init__(*args, **kwargs)
+  def __init__(self, *args, **kwargs):
+    kwargs.update(dict(nargs=0, const=True))
+    super(StoreTrueFileAction, self).__init__(*args, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
-        super(StoreTrueFileAction, self).__call__(parser, namespace, self.const, option_string=option_string)
+  def __call__(self, parser, namespace, values, option_string=None):
+    super(StoreTrueFileAction, self).__call__(
+        parser, namespace, self.const, option_string=option_string)
 
 
 class MicaFile:
-    """
-    File on Mica file system
-    """
+  """
+  File on Mica file system
+  """
 
-    def __init__(self, path):
-        self.path = path
+  def __init__(self, path):
+    self.path = path
 
-    def get_dl_ws(self):
-        return '/'.join(['/draft/file-dl', urllib.parse.quote(self.path.strip('/'))])
+  def get_dl_ws(self):
+    return '/'.join(['/draft/file-dl', urllib.parse.quote(self.path.strip('/'))])
 
-    def get_ws(self):
-        return '/'.join(['/draft/file', urllib.parse.quote(self.path.strip('/'))])
+  def get_ws(self):
+    return '/'.join(['/draft/file', urllib.parse.quote(self.path.strip('/'))])
 
 
 class MicaFileClient(object):
 
-    FILES_WS = '/draft/files'
-    STATUS_DRAFT = 'DRAFT'
-    STATUS_UNDER_REVIEW = 'UNDER_REVIEW'
-    STATUS_DELETED = 'DELETED'
+  FILES_WS = '/draft/files'
+  STATUS_DRAFT = 'DRAFT'
+  STATUS_UNDER_REVIEW = 'UNDER_REVIEW'
+  STATUS_DELETED = 'DELETED'
 
-    def __init__(self, client, file, verbose):
-        self.client = client
-        self.file = file
-        self.verbose = verbose
+  def __init__(self, client, file, verbose):
+    self.client = client
+    self.file = file
+    self.verbose = verbose
 
-    def _get_request(self):
-        request = self.client.new_request()
-        request.fail_on_error().accept_json()
+  def _get_request(self):
+    request = self.client.new_request()
+    request.fail_on_error().accept_json()
 
-        if self.verbose:
-            request.verbose()
+    if self.verbose:
+        request.verbose()
 
-        return request
+    return request
 
-    def _validate_status(self, status):
-        state = self.get().as_json()
-        if state['revisionStatus'] != status:
-            raise Exception('Invalid file revision status. Found: %s, Required: %s' % (state['revisionStatus'], status))
+  def _validate_status(self, status):
+    state = self.get().as_json()
+    if state['revisionStatus'] != status:
+        raise Exception('Invalid file revision status. Found: %s, Required: %s' % (
+            state['revisionStatus'], status))
 
-    def get(self):
-        return self._get_request().get().resource(self.file.get_ws()).send()
+  def get(self):
+    return self._get_request().get().resource(self.file.get_ws()).send()
 
-    def create(self, name):
-        self._validate_status(self.STATUS_DRAFT)
-        return self._get_request().post().resource(self.FILES_WS).content_type_json().content(
-                json.dumps(dict(id='', fileName='.', path='/'.join([self.file.path, name])))).send()
+  def create(self, name):
+    self._validate_status(self.STATUS_DRAFT)
+    return self._get_request().post().resource(self.FILES_WS).content_type_json().content(
+        json.dumps(dict(id='', fileName='.', path='/'.join([self.file.path, name])))).send()
 
-    def copy(self, dest):
-        return self._get_request().put().resource('%s?copy=%s' % (self.file.get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
+  def copy(self, dest):
+    return self._get_request().put().resource('%s?copy=%s' % (self.file.get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
-    def move(self, dest):
-        self._validate_status(self.STATUS_DRAFT)
-        return self._get_request().put().resource('%s?move=%s' % (self.file.get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
+  def move(self, dest):
+    self._validate_status(self.STATUS_DRAFT)
+    return self._get_request().put().resource('%s?move=%s' % (self.file.get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
-    def name(self, name):
-        self._validate_status(self.STATUS_DRAFT)
-        return self._get_request().put().resource('%s?name=%s' % (self.file.get_ws(), urllib.parse.quote_plus(name, safe=''))).send()
+  def name(self, name):
+    self._validate_status(self.STATUS_DRAFT)
+    return self._get_request().put().resource('%s?name=%s' % (self.file.get_ws(), urllib.parse.quote_plus(name, safe=''))).send()
 
-    def status(self, status):
-        return self._get_request().put().resource('%s?status=%s' % (self.file.get_ws(), status.upper())).send()
+  def status(self, status):
+    return self._get_request().put().resource('%s?status=%s' % (self.file.get_ws(), status.upper())).send()
 
-    def publish(self, published):
-        if published:
-            self._validate_status(self.STATUS_UNDER_REVIEW)
+  def publish(self, published):
+    if published:
+        self._validate_status(self.STATUS_UNDER_REVIEW)
 
-        return self._get_request().put().resource('%s?publish=%s' % (self.file.get_ws(), str(published).lower())).send()
+    return self._get_request().put().resource('%s?publish=%s' % (self.file.get_ws(), str(published).lower())).send()
 
-    def unpublish(self, *args):
-        return self.publish(False)
+  def unpublish(self, *args):
+    return self.publish(False)
 
-    def upload(self, upload):
-        response = self._get_request().content_upload(upload).accept('text/html')\
-                .content_type('multipart/form-data').post().resource('/files/temp').send()
+  def upload(self, upload):
+    response = self._get_request().content_upload(upload).accept('text/html')\
+        .content_type('multipart/form-data').post().resource('/files/temp').send()
 
-        location = None
-        if 'Location' in response.headers:
-          location = response.headers['Location']
-        elif 'location' in response.headers:
-          location = response.headers['location']
+    location = None
+    if 'Location' in response.headers:
+        location = response.headers['Location']
+    elif 'location' in response.headers:
+        location = response.headers['location']
 
-        job_resource = re.sub(r'http.*\/ws', r'', location)
-        temp_file = self._get_request().get().resource(job_resource).send().as_json()
-        fileName = temp_file.pop('name', '')
-        temp_file.update(dict(fileName=fileName,justUploaded=True, path=self.file.path))
+    job_resource = re.sub(r'http.*\/ws', r'', location)
+    temp_file = self._get_request().get().resource(job_resource).send().as_json()
+    fileName = temp_file.pop('name', '')
+    temp_file.update(
+        dict(fileName=fileName, justUploaded=True, path=self.file.path))
 
-        return self._get_request().post().resource(self.FILES_WS).content_type_json().content(
-                json.dumps(temp_file)).send()
+    return self._get_request().post().resource(self.FILES_WS).content_type_json().content(
+        json.dumps(temp_file)).send()
 
-    def download(self, *args):
-        return self._get_request().get().resource(self.file.get_dl_ws()).send()
+  def download(self, *args):
+    return self._get_request().get().resource(self.file.get_dl_ws()).send()
 
-    def delete(self, *args):
-        self._validate_status(self.STATUS_DELETED)
-        return self._get_request().delete().resource(self.file.get_ws()).send()
+  def delete(self, *args):
+    self._validate_status(self.STATUS_DELETED)
+    return self._get_request().delete().resource(self.file.get_ws()).send()
+
 
 class FileService:
-    @staticmethod
-    def add_arguments(parser):
-        """
-        Add file command specific options
-        """
-        parser.add_argument('path', help='File path in Mica file system')
-        parser.add_argument('--json', '-j', action='store_true', help='Pretty JSON formatting of the response')
-        group = parser.add_mutually_exclusive_group()
-        group.add_argument('--download', '-dl', action=StoreTrueFileAction, help='Download file')
-        group.add_argument('--upload', '-up', action=FileAction, help='Upload a local file to a folder in Mica file system, requires the folder to be in DRAFT state')
-        group.add_argument('--create', '-c', action=FileAction, help='Create a folder at a specific location, requires the file to be in DRAFT state')
-        group.add_argument('--copy', '-cp', action=FileAction, help='Copy a file to the specified destination')
-        group.add_argument('--move', '-mv', action=FileAction, help='Move a file to the specified destination, requires the file to be in DRAFT state')
-        group.add_argument('--delete', '-d', action=StoreTrueFileAction, help='Delete a file on Mica file system, requires the file to be in DELETED state')
-        group.add_argument('--name', '-n', action=FileAction, help='Rename a file, requires the file to be in DRAFT state')
-        group.add_argument('--status', '-st', action=FileAction, help='Change file status')
-        group.add_argument('--publish', '-pu', action=StoreTrueFileAction, help='Publish a file, requires the file to be in UNDER_REVIEW state')
-        group.add_argument('--unpublish', '-un', action=StoreTrueFileAction, help='Unpublish a file')
+  @staticmethod
+  def add_arguments(parser):
+    """
+    Add file command specific options
+    """
+    parser.add_argument('path', help='File path in Mica file system')
+    parser.add_argument('--json', '-j', action='store_true',
+                        help='Pretty JSON formatting of the response')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--download', '-dl',
+                       action=StoreTrueFileAction, help='Download file')
+    group.add_argument('--upload', '-up', action=FileAction,
+                       help='Upload a local file to a folder in Mica file system, requires the folder to be in DRAFT state')
+    group.add_argument('--create', '-c', action=FileAction,
+                       help='Create a folder at a specific location, requires the file to be in DRAFT state')
+    group.add_argument('--copy', '-cp', action=FileAction,
+                       help='Copy a file to the specified destination')
+    group.add_argument('--move', '-mv', action=FileAction,
+                       help='Move a file to the specified destination, requires the file to be in DRAFT state')
+    group.add_argument('--delete', '-d', action=StoreTrueFileAction,
+                       help='Delete a file on Mica file system, requires the file to be in DELETED state')
+    group.add_argument('--name', '-n', action=FileAction,
+                       help='Rename a file, requires the file to be in DRAFT state')
+    group.add_argument('--status', '-st',
+                       action=FileAction, help='Change file status')
+    group.add_argument('--publish', '-pu', action=StoreTrueFileAction,
+                       help='Publish a file, requires the file to be in UNDER_REVIEW state')
+    group.add_argument('--unpublish', '-un',
+                       action=StoreTrueFileAction, help='Unpublish a file')
 
-    @staticmethod
-    def do_command(args):
-        """
-        Execute file command
-        """
-        # Build and send request
-        client = MicaClient.build(MicaClient.LoginInfo.parse(args))
-        file = MicaFile(args.path)
-        file_client = MicaFileClient(client, file, args.verbose)
-        response = getattr(file_client, args._file_cmd)(getattr(args, args._file_cmd)) if hasattr(args, '_file_cmd') else file_client.get()
+  @staticmethod
+  def do_command_internal(args):
+    """
+    Execute file command
+    """
+    # Build and send request
+    client = MicaClient.build(MicaClient.LoginInfo.parse(args))
+    file = MicaFile(args.path)
+    file_client = MicaFileClient(client, file, args.verbose)
+    response = getattr(file_client, args._file_cmd)(getattr(
+        args, args._file_cmd)) if hasattr(args, '_file_cmd') else file_client.get()
 
-        # format response
-        res = response.pretty_json() if args.json and not args.download and not args.upload else response.content
+    # format response
+    return response.pretty_json() if args.json and not args.download and not args.upload else response.content
 
-        # output to stdout
-        print(res)
+  @staticmethod
+  def do_command(args):
+    res = FileService.do_command_internal(args)
+
+    # output to stdout
+    print(res)

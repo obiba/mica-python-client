@@ -20,6 +20,10 @@ pycurl = "^7.45.2"
 [tool.poetry.group.test.dependencies]
 pytest = "^7.2.2"
 
+
+[tool.poetry.group.dev.dependencies]
+autopep8 = "^2.0.2"
+
 [tool.poetry.scripts]
 mica = 'obiba_mica.console:run'
 
