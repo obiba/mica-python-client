@@ -53,14 +53,14 @@ class PluginService:
   def fetch(self, name: str):
     return self.__make_request().resource('/config/plugin/%s' % name).get().send()
 
-  def install(self, version: str):
-    parts = version.split(':')
+  def install(self, nameVersion: str):
+    parts = nameVersion.split(':')
     if len(parts) == 1:
       url = '/config/plugins?name=%s' % parts[0]
-    else:
+    else:   
       url = '/config/plugins?name=%s$%d' % (parts[0], parts[1])
 
-    return self.__make_request().resource(url).get().send()
+    return self.__make_request().resource(url).post().send()
 
   def configure(self, configure: str):
     request = self.__make_request().content_type_text_plain()

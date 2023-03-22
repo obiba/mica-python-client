@@ -7,29 +7,33 @@ class TestClass(unittest.TestCase):
 
 
   def setup_class(self):
-    self.parser = Utils.make_arg_parser()
-    PluginService.add_arguments(self.parser)
+    self.service = PluginService(Utils.make_client())    
 
   def test_addSearchPlugin(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--install', 'mica-search-es'])
-      PluginService.do_command(args)
+      self.service.install('mica-search-es')
       assert True
     except Exception as e:
       assert False
 
   def test_removeSearchPlugin(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--remove', 'mica-search-es'])
-      PluginService.do_command(args)
+      self.service.remove('mica-search-es')
+      assert True
+    except Exception as e:
+      assert False
+
+  def test_updateSearchPluginConfig(self):
+    try:
+      self.service.configure('mica-search-es')
       assert True
     except Exception as e:
       assert False
 
   def test_listPlugins(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--list'])
-      PluginService.do_command(args)
+      response = self.service.list()
+      print(response)
       assert True
     except Exception as e:
       assert False
