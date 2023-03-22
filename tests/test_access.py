@@ -1,38 +1,43 @@
 import unittest
-from obiba_mica.access import IndividualStudyAccessService
+from obiba_mica.access import IndividualStudyAccessService, FileAccessService
 from tests.utils import Utils
 
 class TestClass(unittest.TestCase):
 
-  def setup_class(self):
-    self.parser = Utils.make_arg_parser()
-    IndividualStudyAccessService.add_arguments(self.parser)
+  def test_documentAccess(self):
+    self.service = IndividualStudyAccessService(Utils.make_client())
 
-  def test_addDocumentAccess(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--type', 'USER', '--subject', 'user1', '--add', 'clsa'])
-      IndividualStudyAccessService.do_command(args)
-      assert True
-    except Exception as e:
-      assert False
+      response = self.service.add_access('clsa', 'USER', 'user1')
+      assert response.code == 204
 
-  def test_listDocumentAccess(self):
-    try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--list', 'clsa'])
-      response = IndividualStudyAccessService.do_command_internal(args).as_json()
+      response = self.service.list_accesses('clsa').as_json()
       found = next((x for x in response if x['principal'] == 'user1'), None)
 
       if found is None:
         assert False
 
-      assert True
+      response = self.service.delete_access('clsa', 'USER', 'user1')
+      assert response.code == 204
     except Exception as e:
       assert False
 
-  def test_removeDocumentAccess(self):
+  def test_fileAccess(self):
+    self.service = FileAccessService(Utils.make_client())
+
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--type', 'USER', '--subject', 'user1', '--delete', 'clsa'])
-      IndividualStudyAccessService.do_command(args)
-      assert True
+      file = '/individual-study/cls/population/1/data-collection-event/4/Wave 4 subject interview.pdf'
+      response = self.service.add_access(file, 'USER', 'user1')
+      assert response.code == 204
+
+      response = self.service.list_accesses(file).as_json()
+      found = next((x for x in response if x['principal'] == 'user1'), None)
+
+      if found is None:
+        assert False
+
+      response = self.service.delete_access(file, 'USER', 'user1')
+      assert response.code == 204
     except Exception as e:
       assert False
+

@@ -5,9 +5,7 @@ from tests.utils import Utils
 class TestClass(unittest.TestCase):
 
   def setup_class(self):
-    client = Utils.make_client()
-    self.service = RestService(client)
-    # RestService.add_arguments(self.parser)
+    self.service = RestService(Utils.make_client())
 
   def test_validRestCall(self):
     try:

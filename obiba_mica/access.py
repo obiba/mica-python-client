@@ -11,6 +11,10 @@ class AccessService:
 
   SUBJECT_TYPES = ('USER', 'GROUP')
 
+  def __init__(self, client, verbose: bool = False):
+     self.client = client
+     self.verbose = verbose
+
   @classmethod
   def add_permission_arguments(cls, parser, fileArg):
     """
@@ -39,75 +43,63 @@ class AccessService:
       if not args.type or args.type.upper() not in AccessService.SUBJECT_TYPES:
         raise Exception("Valid subject types are: %s" % ', '.join(AccessService.SUBJECT_TYPES).lower())
 
-  @classmethod
-  def do_ws(cls, args, path):
-    """
-    Build the web service resource path
-    """
-    file = 'true'
-    if 'no_file' in args and args.no_file:
-      file = 'false'
-
-    if args.add:
-      return UriBuilder(path) \
-        .query('type', args.type.upper()) \
-        .query('principal', args.subject) \
-        .query('file', file) \
-        .build()
-
-    if args.delete:
-      return UriBuilder(path) \
-        .query('type', args.type.upper()) \
-        .query('principal', args.subject) \
-        .build()
-
-    if args.list:
-      return UriBuilder(path) \
-        .build()
-
-  @classmethod
-  def getResourcePathParts(cls, resource, args):
-     return ['draft', resource, args.id, 'accesses']
-
-  @classmethod
-  def get_resource_name(cls):
+  def _get_resource_path(self, id: str):
      pass
 
+  def __make_request(self):
+    request = self.client.new_request()
+    request.fail_on_error()
+    request.accept_json()
+    if self.verbose:
+        request.verbose()
+    return request
+
+  def add_access(self, id, type: str, subject: str, noFile: bool = True):
+    uri = UriBuilder(self._get_resource_path(id)) \
+      .query('type', type.upper()) \
+      .query('principal', subject) \
+      .query('file', str(noFile).lower()) \
+      .build()
+
+    return self.__make_request().resource(uri).put().send()
+
+  def delete_access(self, id, type: str, subject: str):
+    uri = UriBuilder(self._get_resource_path(id)) \
+      .query('type', type.upper()) \
+      .query('principal', subject) \
+      .build()
+
+    return self.__make_request().resource(uri).delete().send()
+
+  def list_accesses(self, id):
+    uri = UriBuilder(self._get_resource_path(id)).build()
+
+    return self.__make_request().resource(uri).get().send()
+
   @classmethod
-  def do_command_internal(cls, args):
+  def do_command(cls, args):
     """
     Execute access command - also used for tests
     """
     # Build and send requests
     cls.validate_args(args)
-
-    request = MicaClient.build(MicaClient.LoginInfo.parse(args)).new_request()
-
-    if args.verbose:
-        request.verbose()
-
-    # send request
-    if args.delete:
-        request.delete()
-    elif args.add:
-        request.put()
-    else:
-        request.get()
+    service = cls(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
 
     try:
-        response = request.resource(cls.do_ws(args, cls.getResourcePathParts(cls.get_resource_name(), args))).send()
+
+      if args.delete:
+        response = service.delete_access(args.id, args.type, args.subject)
+      elif args.add:
+        response = service.add_access(args.id, args.type, args.subject, 'no_file' not in args or not args.no_file)
+      else:
+        response = service.list_accesses(args.id)
+
+      if response.code != 204:
+          print(response.content)
+
     except Exception as e:
         print(Exception, e)
 
-    return response
-
-  @classmethod
-  def do_command(cls, args):
-    response = cls.do_command_internal(args)
-
-    # format response
-    if response.code != 204:
-        print(response.content)
 
 class ProjectAccessService(AccessService):
   """
@@ -116,26 +108,14 @@ class ProjectAccessService(AccessService):
 
   @classmethod
   def add_arguments(cls, parser):
-      """
-      Add command specific options
-      """
-      super(ProjectAccessService, cls).add_permission_arguments(parser, True)
-      parser.add_argument('id', help='Research Project ID')
+    super(ProjectAccessService, cls).add_permission_arguments(parser, True)
+    parser.add_argument('id', help='Research Project ID')
 
-  @classmethod
-  def get_resource_name(cls):
-     return 'project'
-
-  @classmethod
-  def do_command_internal(cls, args):
-      return super(ProjectAccessService, cls).do_command_internal(args)
+  def _get_resource_path(self, id: str):
+     return ['draft', 'project', id, 'accesses']
 
   @classmethod
   def do_command(cls, args):
-      """
-      Execute access command
-      """
-      # Build and send requests
       super(ProjectAccessService, cls).do_command(args)
 
 
@@ -146,23 +126,15 @@ class NetworkAccessService(AccessService):
 
   @classmethod
   def add_arguments(cls, parser):
-      """
-      Add command specific options
-      """
-      super(NetworkAccessService, cls).add_permission_arguments(parser, True)
-      parser.add_argument('id', help='Network ID')
+    super(NetworkAccessService, cls).add_permission_arguments(parser, True)
+    parser.add_argument('id', help='Network ID')
 
-  @classmethod
-  def get_resource_name(cls):
-     return 'network'
-
-  @classmethod
-  def do_command_internal(cls, args):
-      return super(NetworkAccessService, cls).do_command_internal(args)
+  def _get_resource_path(self, id: str):
+    return ['draft', 'network', id, 'accesses']
 
   @classmethod
   def do_command(cls, args):
-      super(NetworkAccessService, cls).do_command(args)
+    super(NetworkAccessService, cls).do_command(args)
 
 class IndividualStudyAccessService(AccessService):
   """
@@ -171,19 +143,11 @@ class IndividualStudyAccessService(AccessService):
 
   @classmethod
   def add_arguments(cls, parser):
-      """
-      Add command specific options
-      """
-      super(IndividualStudyAccessService, cls).add_permission_arguments(parser, True)
-      parser.add_argument('id', help='Individual Study ID')
+    super(IndividualStudyAccessService, cls).add_permission_arguments(parser, True)
+    parser.add_argument('id', help='Individual Study ID')
 
-  @classmethod
-  def get_resource_name(cls):
-     return 'individual-study'
-
-  @classmethod
-  def do_command_internal(cls, args):
-      return super(IndividualStudyAccessService, cls).do_command_internal(args)
+  def _get_resource_path(self, id: str):
+     return ['draft', 'individual-study', id, 'accesses']
 
   @classmethod
   def do_command(cls, args):
@@ -197,19 +161,11 @@ class HarmonizationInitiativeAccessService(AccessService):
 
   @classmethod
   def add_arguments(cls, parser):
-      """
-      Add command specific options
-      """
       super(HarmonizationInitiativeAccessService, cls).add_permission_arguments(parser, True)
       parser.add_argument('id', help='Harmonization Initiative ID')
 
-  @classmethod
-  def get_resource_name(cls):
-     return 'harmonization-study'
-
-  @classmethod
-  def do_command_internal(cls, args):
-      return super(HarmonizationInitiativeAccessService, cls).do_command_internal(args)
+  def _get_resource_path(self, id: str):
+     return ['draft', 'harmonization-study', id, 'accesses']
 
   @classmethod
   def do_command(cls, args):
@@ -222,26 +178,14 @@ class CollectedDatasetAccessService(AccessService):
 
   @classmethod
   def add_arguments(cls, parser):
-      """
-      Add command specific options
-      """
       super(CollectedDatasetAccessService, cls).add_permission_arguments(parser, True)
       parser.add_argument('id', help='Collected Dataset ID')
 
-  @classmethod
-  def get_resource_name(cls):
-     return 'collected-dataset'
-
-  @classmethod
-  def do_command_internal(cls, args):
-      return super(CollectedDatasetAccessService, cls).do_command_internal(args)
+  def _get_resource_path(self, id: str):
+     return ['draft', 'collected-dataset', id, 'accesses']
 
   @classmethod
   def do_command(cls, args):
-      """
-      Execute access command
-      """
-      # Build and send requests
       super(CollectedDatasetAccessService, cls).do_command(args)
 
 class HarmonizationProtocolAccessService(AccessService):
@@ -251,19 +195,11 @@ class HarmonizationProtocolAccessService(AccessService):
 
   @classmethod
   def add_arguments(cls, parser):
-      """
-      Add command specific options
-      """
       super(HarmonizationProtocolAccessService, cls).add_permission_arguments(parser, True)
       parser.add_argument('id', help='Harmonization Protocol ID')
 
-  @classmethod
-  def get_resource_name(cls):
-     return 'harmonized-dataset'
-
-  @classmethod
-  def do_command_internal(cls, args):
-      return super(HarmonizationProtocolAccessService, cls).do_command_internal(args)
+  def _get_resource_path(self, id: str):
+     return ['draft', 'harmonized-dataset', id, 'accesses']
 
   @classmethod
   def do_command(cls, args):
@@ -274,13 +210,12 @@ class FileAccessService(AccessService):
   file access management
   """
 
-  @classmethod
-  def getResourcePathParts(cls, resource, args):
-    path = args.path
+  def _get_resource_path(self, id: str):
+    path = id
     while path.startswith('/'):
       path = path[1:]
 
-    return ['draft', resource, path]
+    return ['draft', 'file-access', path]
 
   @classmethod
   def add_arguments(cls, parser):
@@ -288,15 +223,11 @@ class FileAccessService(AccessService):
       Add command specific options
       """
       super(FileAccessService, cls).add_permission_arguments(parser, False)
-      parser.add_argument('path', help='File path in Mica file system')
+      parser.add_argument('id', help='File path in Mica file system')
 
   @classmethod
   def get_resource_name(cls):
      return 'file-access'
-
-  @classmethod
-  def do_command_internal(cls, args):
-      return super(FileAccessService, cls).do_command_internal(args)
 
   @classmethod
   def do_command(cls, args):

@@ -5,34 +5,21 @@ from tests.utils import Utils
 class TestClass(unittest.TestCase):
 
   def setup_class(self):
-    self.parser = Utils.make_arg_parser()
-    IndividualStudyPermissionService.add_arguments(self.parser)
+    self.service = IndividualStudyPermissionService(Utils.make_client())
 
-  def test_addDocumentPermission(self):
+  def test_documentPermission(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--type', 'USER', '--subject', 'user1', '--permission', 'READER', '--add', 'clsa'])
-      IndividualStudyPermissionService.do_command(args)
-      assert True
-    except Exception as e:
-      assert False
+      response = self.service.add_permission('clsa', 'USER', 'user1', 'READER')
+      assert response.code == 204
 
-  def test_listDocumentPermission(self):
-    try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--list', 'clsa'])
-      response = IndividualStudyPermissionService.do_command_internal(args).as_json()
+      response = self.service.list_permissions('clsa').as_json()
       found = next((x for x in response if x['principal'] == 'user1'), None)
 
       if found is None:
         assert False
 
-      assert True
-    except Exception as e:
-      assert False
+      response = self.service.delete_permission('clsa', 'USER', 'user1')
+      assert response.code == 204
 
-  def test_removeDocumentPermission(self):
-    try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--type', 'USER', '--subject', 'user1', '--delete', 'clsa'])
-      IndividualStudyPermissionService.do_command(args)
-      assert True
     except Exception as e:
       assert False
