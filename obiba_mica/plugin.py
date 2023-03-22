@@ -3,9 +3,21 @@ Mica plugin management.
 """
 
 import sys
-from obiba_mica.core import MicaClient
+from obiba_mica.core import MicaClient, MicaRequest
 
 class PluginService:
+
+  def __init__(self, client, verbose: bool = False):
+     self.client = client
+     self.verbose = verbose
+
+  def __make_request(self) -> MicaRequest:
+    request = self.client.new_request()
+    request.fail_on_error()
+    request.accept_json()
+    if self.verbose:
+        request.verbose()
+    return request
 
   @classmethod
   def add_arguments(cls, parser):
@@ -32,53 +44,84 @@ class PluginService:
       parser.add_argument('--json', '-j', action='store_true', help='Pretty JSON formatting of the response')
 
 
+  def updates(self):
+    return self.__make_request().resource('/config/plugins/_updates').get().send()
+
+  def available(self):
+    return self.__make_request().resource('/config/plugins/_available').get().send()
+
+  def fetch(self, name: str):
+    return self.__make_request().resource('/config/plugin/%s' % name).get().send()
+
+  def install(self, version: str):
+    parts = version.split(':')
+    if len(parts) == 1:
+      url = '/config/plugins?name=%s' % parts[0]
+    else:
+      url = '/config/plugins?name=%s$%d' % (parts[0], parts[1])
+
+    return self.__make_request().resource(url).get().send()
+
+  def configure(self, configure: str):
+    request = self.__make_request().content_type_text_plain()
+    print('Enter plugin site properties (one property per line, Ctrl-D to end input):')
+    request.content(sys.stdin.read())
+    return request.put().resource('/config/plugin/%s/cfg' % configure).send()
+
+  def remove(self, nameVersion: str):
+    return self.__make_request().resource('/config/plugin/%s' % nameVersion).delete().send()
+
+  def reinstate(self, name: str):
+    return self.__make_request().resource('/config/plugin/%s' % name).put().send()
+
+  def status(self, name: str):
+    return self.__make_request().resource('/config/plugin/%s/service' % name).get().send()
+
+  def start(self, name: str):
+    return self.__make_request().resource('/config/plugin/%s/service' % name).put().send()
+
+  def stop(self, name: str):
+    return self.__make_request().resource('/config/plugin/%s/service' % name).delete().send()
+
+  def list(self):
+    return self.__make_request().resource('/config/plugins').get().send()
+
   @classmethod
   def do_command(cls, args):
       """
       Execute plugin command
       """
       # Build and send request
-      request = MicaClient.build(MicaClient.LoginInfo.parse(args)).new_request()
-      request.fail_on_error().accept_json()
-
-      if args.verbose:
-          request.verbose()
+      client = MicaClient.build(MicaClient.LoginInfo.parse(args))
+      service = PluginService(client, args.verbose)
 
       if args.updates:
-          response = request.get().resource('/config/plugins/_updates').send()
+          response = service.updates()
       elif args.available:
-          response = request.get().resource('/config/plugins/_available').send()
+          response = service.available()
       elif args.install:
-          nameVersion = args.install.split(':')
-          if len(nameVersion) == 1:
-              response = request.post().resource('/config/plugins?name=' + nameVersion[0]).send()
-          else:
-              response = request.post().resource(
-                  '/config/plugins?name=' + nameVersion[0] + '&version=' + nameVersion[1]).send()
+          service.install(args.install)
       elif args.fetch:
-          response = request.get().resource('/config/plugin/' + args.fetch).send()
+          response = service.fetch(args.fetch)
       elif args.configure:
-          request.content_type_text_plain()
-          print('Enter plugin site properties (one property per line, Ctrl-D to end input):')
-          request.content(sys.stdin.read())
-          response = request.put().resource('/config/plugin/' + args.configure + '/cfg').send()
+          response = service.configure(args.configure)
       elif args.remove:
-          response = request.delete().resource('/config/plugin/' + args.remove).send()
+          response = service.remove(args.remove)
       elif args.reinstate:
-          response = request.put().resource('/config/plugin/' + args.reinstate).send()
+          response = service.reinstate(args.reinstate)
       elif args.status:
-          response = request.get().resource('/config/plugin/' + args.status + '/service').send()
+          response = service.status(args.status)
       elif args.start:
-          response = request.put().resource('/config/plugin/' + args.start + '/service').send()
+          response = service.start(args.start)
       elif args.stop:
-          response = request.delete().resource('/config/plugin/' + args.stop + '/service').send()
+          response = service.stop(args.stop)
       else:
-          response = request.get().resource('/config/plugins').send()
+          response = service.list()
 
       # format response
       res = response.content
       if args.json:
-          res = response.pretty_json()
+          res = response.as_json()
 
       # output to stdout
       print(res)

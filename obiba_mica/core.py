@@ -386,7 +386,7 @@ class MicaService:
     self.client = client
     self.verbose = verbose
 
-  def _make_request(self, fail_safe: bool = False):
+  def _make_request(self, fail_safe: bool = False) -> MicaRequest:
     request = self.client.new_request()
     if not fail_safe:
         request.fail_on_error()
