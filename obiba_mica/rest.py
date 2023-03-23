@@ -6,7 +6,7 @@ class RestService:
   Perform raw web services requests.
   """
 
-  def __init__(self, client: MicaClient, accept = None, verbose: bool = False):
+  def __init__(self, client: MicaClient, verbose: bool = False):
      self.client = client
      self.verbose = verbose
 
@@ -31,7 +31,7 @@ class RestService:
     """
     # Build and send request
     client = MicaClient.build(MicaClient.LoginInfo.parse(args))
-    service = RestService(client, args.accept, args.verbose)    
+    service = RestService(client, args.accept, args.verbose)
 
     # send request
     method = args.method if args.method else 'GET'
@@ -59,7 +59,7 @@ class RestService:
     if self.verbose:
         request.verbose()
     return request
-  
+
   def _make_request_with_content_type(self, contentType):
     request = self._make_request()
     if contentType:
