@@ -83,8 +83,8 @@ class RestService:
 
   def send_put_request(self, url: str, contentType):
     request = self._make_request_with_content_type(contentType)
-    return request.delete().resource(url).send()
+    return request.put().resource(url).send()
 
   def send_post_request(self, url: str, contentType):
     request = self._make_request_with_content_type(contentType)
-    return request.delete().resource(url).send()
+    return request.post().resource(url).send()
