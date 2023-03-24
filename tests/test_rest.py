@@ -1,5 +1,6 @@
 import unittest
 from obiba_mica.rest import RestService
+from obiba_mica.core import HTTPError
 from tests.utils import Utils
 
 class TestClass(unittest.TestCase):
@@ -9,7 +10,7 @@ class TestClass(unittest.TestCase):
 
   def test_validRestCall(self):
     try:
-      response = self.service.send_get_request('/draft/individual-study/clsa').as_json()
+      response = self.service.send_request('/draft/individual-study/clsa', self.service.make_request('GET')).as_json()
       if response['id'] != 'clsa':
         assert False
 
@@ -19,8 +20,12 @@ class TestClass(unittest.TestCase):
 
   def test_invalidRestCall(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['/draft/individual-studies'])
-      RestService.do_command(args)
-      assert False
-    except Exception as e:
+      response = self.service.send_request('/draft/individual-study/potato', self.service.make_request('GET')).as_json()
+      if response['id'] != 'clsa':
+        assert False
+
       assert True
+    except HTTPError as e:
+      assert e.code == 404
+    except Exception as e:
+      assert False
