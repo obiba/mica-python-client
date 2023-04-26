@@ -1,4 +1,5 @@
 import sys
+import ast
 from obiba_mica.core import MicaClient
 from obiba_mica.core import MicaRequest
 
@@ -58,24 +59,40 @@ class RestService:
     """
     # Build and send request
     client = MicaClient.build(MicaClient.LoginInfo.parse(args))
-    service = RestService(client, args.verbose)
+    try:
+        request = client.new_request()
+        request.fail_on_error()
 
-    # send request
-    method = args.method if args.method else 'GET'
+        if args.accept:
+            request.accept(args.accept)
+        else:
+            request.accept_json()
 
-    if method in ['POST', 'PUT']:
-      request = service.make_request_with_content_type(args.method, args.content_type)
-    else:
-      request = service.make_request(method)
+        if args.content_type:
+            request.content_type(args.content_type)
+            print('Enter content:')
+            request.content(sys.stdin.read())
 
-    response = service.send_request(args.ws, request)
+        if args.headers:
+            headers = ast.literal_eval(args.headers)
+            for key in list(headers.keys()):
+                request.header(key, headers[key])
 
-    # format response
-    res = response.content
-    if args.json:
-      res = response.pretty_json()
-    elif args.method in ['OPTIONS']:
-      res = response.headers['Allow']
+        if args.verbose:
+            request.verbose()
 
-    # output to stdout
-    print(res)
+        # send request
+        request.method(args.method).resource(args.ws)
+        response = request.send()
+
+        # format response
+        res = response.content
+        if args.json:
+            res = response.pretty_json()
+        elif args.method in ['OPTIONS']:
+            res = response.headers['Allow']
+
+        # output to stdout
+        print(res)
+    finally:
+        client.close()

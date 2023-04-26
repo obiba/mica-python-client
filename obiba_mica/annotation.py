@@ -81,7 +81,7 @@ class AnnotationService:
                   'name': var['name'],
                   'index': str(var['index']),
                   'label': label,
-                  'tag': tag
+                  'annotation': tag
                   })
 
   def write_datasets_variable_annotations(self, writer):
