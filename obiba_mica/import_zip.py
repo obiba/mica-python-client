@@ -30,7 +30,6 @@ class FileImportService:
       parser.add_argument('path', help='Path to the zip file or directory that contains zip files to be imported')
       parser.add_argument('--publish', '-pub', action='store_true', help='Publish imported study')
 
-
   def import_zip(self, path, publish: bool = None):
       """
       Import the Zip file content
@@ -38,14 +37,14 @@ class FileImportService:
       print("Importing " + path + "...")
 
       query = "publish=%s" % str(publish).lower() if publish is not None and publish else ''
-      response = self.__make_request().content_upload(path).resource('/draft/studies/_import?%s' % query).send()
+      return self.__make_request().content_upload(path).resource('/draft/studies/_import?%s' % query).send()
 
-      # format response
-      res = response.content
-
-      # output to stdout
-      if len(res) > 0:
-          print(res)
+  @classmethod
+  def __printResponse(cls, response):
+    res = response.content
+    # output to stdout
+    if len(res) > 0:
+        print(res)
 
   @classmethod
   def do_command(cls, args):
@@ -55,10 +54,8 @@ class FileImportService:
       Execute Import Zip command
       """
       if args.path.endswith('.zip'):
-          service.import_zip(args.path, args.publish)
+          cls.__printResponse(service.import_zip(args.path, args.publish))
       else:
           for export_file in os.listdir(args.path):
               if export_file.endswith('.zip'):
-                  service.import_zip(args.path + '/' + export_file)
-
-
+                  cls.__printResponse(service.import_zip(args.path + '/' + export_file))
