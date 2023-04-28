@@ -6,70 +6,84 @@ import json
 class TestClass(unittest.TestCase):
 
   def setup_class(self):
-    self.parser = Utils.make_arg_parser()
-    FileService.add_arguments(self.parser)
+    self.service = FileService(Utils.make_client())
 
   def test_1_fileUpload(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--upload', './tests/resources/dummy.csv', '/individual-study/clsa'])
-      FileService.do_command_internal(args)
-      assert True
-    except Exception as e:
-      assert False    
+      response = self.service.upload('/individual-study',  './tests/resources/dummy.csv')
 
-  def test_2_fileChangeStatus(self):
-    try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--status', 'UNDER_REVIEW', '/individual-study/clsa/dummy.csv'])
-      FileService.do_command_internal(args)
-      assert True
+      if response.code == 201:
+        assert True
+      else:
+        assert False
+
     except Exception as e:
-      assert False    
+      assert False
+
+  def __test_fileChangeStatus(self, file, status):
+    try:
+      response = self.service.status(file, status)
+
+      if response.code == 204:
+        assert True
+      else:
+        assert False
+
+    except Exception as e:
+      assert False
+
+  def test_2_fileUnderReviewStatus(self):
+    self.__test_fileChangeStatus('/individual-study/dummy.csv', FileService.STATUS_UNDER_REVIEW)
 
   def test_3_filePublish(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--publish', '/individual-study/clsa/dummy.csv'])
-      FileService.do_command_internal(args)
-      assert True
+      response = self.service.publish('/individual-study/dummy.csv', True)
+
+      if response.code == 204:
+        assert True
+      else:
+        assert False
+
     except Exception as e:
-      assert False    
+      assert False
 
   def test_4_fileJson(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['/individual-study/clsa/dummy.csv'])
-      res = FileService.do_command_internal(args)
+      response = self.service.get('/individual-study/dummy.csv')
 
-      if res is None:
+      if response is None:
         assert False
       else:
-        parsed = json.loads(res)
+        parsed = json.loads(response.content)
         if parsed['name'] != 'dummy.csv' and parsed['state']['publishedId'] == None:
           assert False
 
       assert True
     except Exception as e:
-      assert False    
+      assert False
 
   def test_5_fileDownload(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--download', './individual-study/clsa/dummy.csv'])
-      content = FileService.do_command_internal(args)
+      response = self.service.download('/individual-study/dummy.csv')
 
-      if 'col1' not in content:
+      if response is None or 'col1' not in response.content:
         assert False
 
       assert True
     except Exception as e:
-      assert False    
+      assert False
 
+  def test_6_changeDeletedStatus(self):
+    self.__test_fileChangeStatus('/individual-study/dummy.csv', FileService.STATUS_DELETED)
 
-  def test_6_fileDelete(self):
+  def test_7_fileDelete(self):
     try:
-      args = Utils.parse_arg_values(parser=self.parser,params=['--status', 'DELETED', '/individual-study/clsa/dummy.csv'])
-      FileService.do_command_internal(args)
+      response = self.service.delete('/individual-study/dummy.csv')
 
-      args = Utils.parse_arg_values(parser=self.parser,params=['--delete', '/individual-study/clsa/dummy.csv'])
-      FileService.do_command_internal(args)
+      if response.code == 204:
+        assert True
+      else:
+        assert False
 
-      assert True
     except Exception as e:
       assert False

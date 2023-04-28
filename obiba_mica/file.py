@@ -42,16 +42,15 @@ class MicaFile:
     return '/'.join(['/draft/file', urllib.parse.quote(self.path.strip('/'))])
 
 
-class MicaFileClient(object):
+class FileService(object):
 
   FILES_WS = '/draft/files'
   STATUS_DRAFT = 'DRAFT'
   STATUS_UNDER_REVIEW = 'UNDER_REVIEW'
   STATUS_DELETED = 'DELETED'
 
-  def __init__(self, client, file, verbose):
+  def __init__(self, client: MicaClient, verbose: bool = False):
     self.client = client
-    self.file = file
     self.verbose = verbose
 
   def _get_request(self):
@@ -63,44 +62,44 @@ class MicaFileClient(object):
 
     return request
 
-  def _validate_status(self, status):
-    state = self.get().as_json()
+  def _validate_status(self, file, status):
+    state = self.get(file).as_json()
     if state['revisionStatus'] != status:
         raise Exception('Invalid file revision status. Found: %s, Required: %s' % (
             state['revisionStatus'], status))
 
-  def get(self):
-    return self._get_request().get().resource(self.file.get_ws()).send()
+  def get(self, file):
+    return self._get_request().get().resource(MicaFile(file).get_ws()).send()
 
-  def create(self, name):
-    self._validate_status(self.STATUS_DRAFT)
+  def create(self, file, name):
+    self._validate_status(file, self.STATUS_DRAFT)
     return self._get_request().post().resource(self.FILES_WS).content_type_json().content(
-        json.dumps(dict(id='', fileName='.', path='/'.join([self.file.path, name])))).send()
+        json.dumps(dict(id='', fileName='.', path='/'.join([MicaFile(file).path, name])))).send()
 
-  def copy(self, dest):
-    return self._get_request().put().resource('%s?copy=%s' % (self.file.get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
+  def copy(self, file, dest):
+    return self._get_request().put().resource('%s?copy=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
-  def move(self, dest):
-    self._validate_status(self.STATUS_DRAFT)
-    return self._get_request().put().resource('%s?move=%s' % (self.file.get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
+  def move(self, file, dest):
+    self._validate_status(file, elf.STATUS_DRAFT)
+    return self._get_request().put().resource('%s?move=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
-  def name(self, name):
-    self._validate_status(self.STATUS_DRAFT)
-    return self._get_request().put().resource('%s?name=%s' % (self.file.get_ws(), urllib.parse.quote_plus(name, safe=''))).send()
+  def name(self, file, name):
+    self._validate_status(file, self.STATUS_DRAFT)
+    return self._get_request().put().resource('%s?name=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(name, safe=''))).send()
 
-  def status(self, status):
-    return self._get_request().put().resource('%s?status=%s' % (self.file.get_ws(), status.upper())).send()
+  def status(self, file, status):
+    return self._get_request().put().resource('%s?status=%s' % (MicaFile(file).get_ws(), status.upper())).send()
 
-  def publish(self, published):
+  def publish(self, file, published):
     if published:
-        self._validate_status(self.STATUS_UNDER_REVIEW)
+        self._validate_status(file, self.STATUS_UNDER_REVIEW)
 
-    return self._get_request().put().resource('%s?publish=%s' % (self.file.get_ws(), str(published).lower())).send()
+    return self._get_request().put().resource('%s?publish=%s' % (MicaFile(file).get_ws(), str(published).lower())).send()
 
   def unpublish(self, *args):
     return self.publish(False)
 
-  def upload(self, upload):
+  def upload(self, file, upload):
     response = self._get_request().content_upload(upload).accept('text/html')\
         .content_type('multipart/form-data').post().resource('/files/temp').send()
 
@@ -114,20 +113,18 @@ class MicaFileClient(object):
     temp_file = self._get_request().get().resource(job_resource).send().as_json()
     fileName = temp_file.pop('name', '')
     temp_file.update(
-        dict(fileName=fileName, justUploaded=True, path=self.file.path))
+        dict(fileName=fileName, justUploaded=True, path=MicaFile(file).path))
 
     return self._get_request().post().resource(self.FILES_WS).content_type_json().content(
         json.dumps(temp_file)).send()
 
-  def download(self, *args):
-    return self._get_request().get().resource(self.file.get_dl_ws()).send()
+  def download(self, file, *args):
+    return self._get_request().get().resource(MicaFile(file).get_dl_ws()).send()
 
-  def delete(self, *args):
-    self._validate_status(self.STATUS_DELETED)
-    return self._get_request().delete().resource(self.file.get_ws()).send()
+  def delete(self, file, *args):
+    self._validate_status(file, self.STATUS_DELETED)
+    return self._get_request().delete().resource(MicaFile(file).get_ws()).send()
 
-
-class FileService:
   @staticmethod
   def add_arguments(parser):
     """
@@ -159,23 +156,21 @@ class FileService:
                        action=StoreTrueFileAction, help='Unpublish a file')
 
   @staticmethod
-  def do_command_internal(args):
+  def do_command(args):
     """
     Execute file command
     """
-    # Build and send request
-    client = MicaClient.build(MicaClient.LoginInfo.parse(args))
-    file = MicaFile(args.path)
-    file_client = MicaFileClient(client, file, args.verbose)
-    response = getattr(file_client, args._file_cmd)(getattr(
-        args, args._file_cmd)) if hasattr(args, '_file_cmd') else file_client.get()
+    service = FileService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
+    response = None
 
-    # format response
-    return response.pretty_json() if args.json and not args.download and not args.upload else response.content
+    if hasattr(args, '_file_cmd'):
+      command = getattr(service, args._file_cmd)
+      fileCommandParams = getattr(args, args._file_cmd)
+      response = command(args.path, fileCommandParams)
+    else:
+      response = service.get()
 
-  @staticmethod
-  def do_command(args):
-    res = FileService.do_command_internal(args)
+    res = response.pretty_json() if args.json and not args.download and not args.upload else response.content
 
     # output to stdout
     print(res)
