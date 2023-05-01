@@ -1,4 +1,3 @@
-from argparse import Namespace
 import unittest
 from obiba_mica.core import MicaClient
 from os.path import exists

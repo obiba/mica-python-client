@@ -4,8 +4,9 @@ from tests.utils import Utils
 
 class TestClass(unittest.TestCase):
 
-  def setup_class(self):
-    self.service = IndividualStudyPermissionService(Utils.make_client())
+  @classmethod
+  def setup_class(cls):
+    cls.service = IndividualStudyPermissionService(Utils.make_client())
 
   def test_documentPermission(self):
     try:

@@ -5,8 +5,9 @@ from tests.utils import Utils
 
 class TestClass(unittest.TestCase):
 
-  def setup_class(self):
-    self.service = FileImportService(Utils.make_client())
+  @classmethod
+  def setup_class(cls):
+    cls.service = FileImportService(Utils.make_client())
 
   def test_importZip(self):
     try:

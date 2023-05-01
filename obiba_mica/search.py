@@ -7,50 +7,46 @@ import sys
 import pycurl
 from obiba_mica.core import MicaClient, UriBuilder
 import csv
+from io import StringIO
 
 class SearchService:
 
-  @classmethod
-  def add_arguments(cls, parser):
-      '''
-      Add tags command specific options
-      '''
-      parser.add_argument('--out', '-o', required=False, help='Output file (default is stdout).')
-      parser.add_argument('--target', '-t', required=True, choices=['variable', 'dataset', 'study', 'population', 'dce', 'network'],
-                          help='Document type to be searched for.')
-      parser.add_argument('--query', '-q', required=False, help='Query that filters the documents. If not specified, no filter is applied.')
-      parser.add_argument('--start', '-s', required=False, type=int, default=0, help='Start search at document position.')
-      parser.add_argument('--limit', '-lm', required=False, type=int, default=100, help='Max number of documents.')
-      parser.add_argument('--locale', '-lc', required=False, default='en', help='The language for labels.')
+  def __init__(self, client: MicaClient, verbose: bool = False):
+    self.client = client
+    self.verbose = verbose
 
-  @classmethod
-  def send_search_request(cls, client, ws, query, verbose=False):
+  def __make_request(self):
+    request = self.client.new_request()
+    request.fail_on_error()
+    request.post()
+    request.accept_json()
+    if self.verbose:
+        request.verbose()
+    return request
+
+  def send_search_request(self, ws, query):
       '''
       Create a new request
       '''
-      response = None
       try:
-          request = client.new_request()
-          if verbose:
-              request.verbose()
-          response = request.post().resource(ws).content_type_form().form({'query': query}).send()
+          request = self.__make_request()
+          response = request.resource(ws).content_type_form().form({'query': query}).send()
+          return response.as_json()
       except Exception as e:
           print(e, file=sys.stderr)
       except pycurl.error as error:
           errno, errstr = error
           print('An error occurred: ', errstr, file=sys.stderr)
 
-      return response.as_json()
+      return None
 
-  @classmethod
-  def as_rql(cls, name, args):
+  def __as_rql(self, name, args):
       return name + '(' + ','.join(args) + ')'
 
-  @classmethod
-  def append_rql(cls, query, target, select, sort, start, limit, locale):
-      _fields =  cls.as_rql('fields(', select) + ')'
-      _sort =  cls.as_rql('sort', sort)
-      _limit =  cls.as_rql('limit', [str(start), str(limit)])
+  def __append_rql(self, query, target, select, sort, start, limit, locale):
+      _fields = self.__as_rql('fields(', select) + ')'
+      _sort = self.__as_rql('sort', sort)
+      _limit = self.__as_rql('limit', [str(start), str(limit)])
       statement = ','.join([_fields, _limit, _sort])
       # normalize
       q = query
@@ -67,8 +63,7 @@ class SearchService:
 
       return q + ',locale(' + locale + ')'
 
-  @classmethod
-  def extract_label(cls, labels, locale='en', locale_key='lang', value_key='value'):
+  def __extract_label(self, labels, locale='en', locale_key='lang', value_key='value'):
       if not labels:
           return None
       label_und = None
@@ -80,57 +75,56 @@ class SearchService:
                   label_und = label[value_key]
       return label_und if label_und else ''
 
-  @classmethod
-  def new_writer(cls, out, headers):
+  def __new_writer(self, out, headers):
       file = sys.stdout
       if out:
-          file = open(out, 'w')
+          if isinstance(out, StringIO):
+            file = out
+          else:
+            file = open(out, 'w')
       writer = csv.DictWriter(file, fieldnames=headers, escapechar='"', quotechar='"', quoting=csv.QUOTE_ALL)
       writer.writeheader()
       return writer
 
-  @classmethod
-  def to_string(cls, value):
+  def __to_string(self, value):
       if value == None:
           return ''
       return str(value)
 
-  @classmethod
-  def flatten(cls, content, locale='en'):
+  def __flatten(self, content, locale='en'):
       flat = {}
       for key in list(content.keys()):
           value = content[key]
           if type(value) is dict:
-              fvalue = cls.flatten(value, locale)
+              fvalue = self.__flatten(value, locale)
               for k in fvalue:
                   nk = key + '.' + k if k != locale else key
                   flat[nk] = fvalue[k]
           elif type(value) is list:
-              flat[key] = '|'.join(map(cls.to_string, value))
+              flat[key] = '|'.join(map(self.__to_string, value))
           else:
-              flat[key] = cls.to_string(value)
+              flat[key] = self.__to_string(value)
       return flat
 
-  @classmethod
-  def search_networks(cls, args, client):
-      q = cls.append_rql(args.query, 'network', ['*'], ['id'], args.start, args.limit, args.locale)
+  def search_networks(self, query='', start=0, limit=100, locale='en', out=None):
+      q = self.__append_rql(query, 'network', ['*'], ['id'], start, limit, locale)
       ws = UriBuilder(['networks', '_rql']).build()
-      res = cls.send_search_request(client, ws, q, args.verbose)
-      if 'networkResultDto' in res and 'obiba.mica.NetworkResultDto.result' in res['networkResultDto']:
-          headers = ['id','name','acronym','description','studyIds']
+      res = self.send_search_request(ws, q)
+      if 'networkResultDto' in res and 'obiba.mica.NetworkResultDto.result' in res['networkResultDto'] and res['networkResultDto']['totalHits'] > 0:
+          headers = ['id', 'name', 'acronym', 'description', 'studyIds']
           for item in res['networkResultDto']['obiba.mica.NetworkResultDto.result']['networks']:
               if 'content' in item:
-                  item['flat'] = cls.flatten(json.loads(item['content']), args.locale)
+                  item['flat'] = self.__flatten(json.loads(item['content']), locale)
                   for key in list(item['flat'].keys()):
                       if key not in headers:
                           headers.append(key)
-          writer = cls.new_writer(args.out, headers)
+          writer = self.__new_writer(out, headers)
           for item in res['networkResultDto']['obiba.mica.NetworkResultDto.result']['networks']:
               row = {
                   'id': item['id'],
-                  'name': cls.extract_label(item['name'], args.locale),
-                  'description': cls.extract_label(item['description'], args.locale) if 'description' in item else '',
-                  'acronym': cls.extract_label(item['acronym'], args.locale),
+                  'name': self.__extract_label(item['name'], locale),
+                  'description': self.__extract_label(item['description'], locale) if 'description' in item else '',
+                  'acronym': self.__extract_label(item['acronym'], locale),
                   'studyIds': '|'.join(item['studyIds']) if 'studyIds' in item else ''
               }
               if 'flat' in item:
@@ -138,55 +132,64 @@ class SearchService:
                       row[key] = item['flat'][key]
               writer.writerow(row)
 
-  @classmethod
-  def search_studies(cls, args, client):
-      q = cls.append_rql(args.query, 'study', ['acronym', 'name', 'objectives', 'model'], ['id'], args.start, args.limit, args.locale)
+  def __search_studies(self, query='', start=0, limit=100, locale='en', out=None):
+      q = self.__append_rql(query, 'study', ['acronym', 'name', 'objectives', 'model'], ['id'], start, limit, locale)
       ws = UriBuilder(['studies', '_rql']).build()
-      res = cls.send_search_request(client, ws, q, args.verbose)
-      if 'studyResultDto' in res and 'obiba.mica.StudyResultDto.result' in res['studyResultDto']:
-          headers = ['id','name','acronym','objectives']
+      res = self.send_search_request(ws, q)
+      if 'studyResultDto' in res and 'obiba.mica.StudyResultDto.result' in res['studyResultDto'] and res['studyResultDto']['totalHits'] > 0:
+          headers = ['id', 'name', 'acronym', 'objectives']
           for item in res['studyResultDto']['obiba.mica.StudyResultDto.result']['summaries']:
               if 'content' in item:
-                  item['flat'] = cls.flatten(json.loads(item['content']), args.locale)
+                  item['flat'] = self.__flatten(json.loads(item['content']), locale)
                   for key in list(item['flat'].keys()):
                       if key not in headers:
                           headers.append(key)
-          writer = cls.new_writer(args.out, headers)
+          writer = self.__new_writer(out, headers)
           for item in res['studyResultDto']['obiba.mica.StudyResultDto.result']['summaries']:
               row = {
                   'id': item['id'],
-                  'name': cls.extract_label(item['name'], args.locale),
-                  'objectives': cls.extract_label(item['objectives'], args.locale) if 'objectives' in item else '',
-                  'acronym': cls.extract_label(item['acronym'], args.locale)
+                  'name': self.__extract_label(item['name'], locale),
+                  'objectives': self.__extract_label(item['objectives'], locale) if 'objectives' in item else '',
+                  'acronym': self.__extract_label(item['acronym'], locale)
               }
               if 'flat' in item:
                   for key in item['flat']:
                       row[key] = item['flat'][key]
               writer.writerow(row)
 
-  @classmethod
-  def search_study_populations(cls, args, client):
-      q = cls.append_rql(args.query, 'study', ['populations.name','populations.description','populations.model'], ['id'], args.start, args.limit, args.locale)
+  def search_studies(self, query='', start=0, limit=100, locale='en', out=None):
+      typeQuery = self.__as_rql('study', [self.__as_rql('in', ['Mica_dataset.className', 'Study'])])
+      theQuery = '%s,%s' % (typeQuery, query) if query is not None and len(query) > 0 else typeQuery
+      self.__search_studies(theQuery, start, limit, locale, out)
+
+  def search_initiatives(self, query='', start=0, limit=100, locale='en', out=None):
+      typeQuery = self.__as_rql('study', [self.__as_rql('in', ['Mica_dataset.className', 'HarmonizationStudy'])])
+      theQuery = '%s,%s' % (typeQuery, query) if query is not None and len(query) > 0 else typeQuery
+      self.__search_studies(theQuery, start, limit, locale, out)
+
+
+  def search_study_populations(self, query='', start=0, limit=100, locale='en', out=None):
+      q = self.__append_rql(query, 'study', ['populations.name', 'populations.description', 'populations.model'], ['id'], start, limit, locale)
       ws = UriBuilder(['studies', '_rql']).build()
-      res = cls.send_search_request(client, ws, q, args.verbose)
+      res = self.send_search_request(ws, q)
       if 'studyResultDto' in res and 'obiba.mica.StudyResultDto.result' in res['studyResultDto']:
-          headers = ['id','name','description','studyId']
+          headers = ['id', 'name', 'description', 'studyId']
           for item in res['studyResultDto']['obiba.mica.StudyResultDto.result']['summaries']:
               if 'populationSummaries' in item:
                   for pop in item['populationSummaries']:
                       if 'content' in pop:
-                          pop['flat'] = cls.flatten(json.loads(pop['content']), args.locale)
+                          pop['flat'] = self.__flatten(json.loads(pop['content']), locale)
                           for key in list(pop['flat'].keys()):
                               if key not in headers:
                                   headers.append(key)
-          writer = cls.new_writer(args.out, headers)
+          writer = self.__new_writer(out, headers)
           for item in res['studyResultDto']['obiba.mica.StudyResultDto.result']['summaries']:
               if 'populationSummaries' in item:
                   for pop in item['populationSummaries']:
                       row = {
                           'id': item['id'] + ':' + pop['id'],
-                          'name': cls.extract_label(pop['name'], args.locale),
-                          'description': cls.extract_label(pop['description'], args.locale) if 'description' in pop else '',
+                          'name': self.__extract_label(pop['name'], locale),
+                          'description': self.__extract_label(pop['description'], locale) if 'description' in pop else '',
                           'studyId': item['id']
                       }
                       if 'flat' in pop:
@@ -194,33 +197,32 @@ class SearchService:
                               row[key] = pop['flat'][key]
                       writer.writerow(row)
 
-  @classmethod
-  def search_study_dces(cls, args, client):
-      q = cls.append_rql(args.query, 'study', ['populations.dataCollectionEvents'], ['id'], args.start, args.limit, args.locale)
+  def search_study_dces(self, query='', start=0, limit=100, locale='en', out=None):
+      q = self.__append_rql(query, 'study', ['populations.dataCollectionEvents'], ['id'], start, limit, locale)
       ws = UriBuilder(['studies', '_rql']).build()
-      res = cls.send_search_request(client, ws, q, args.verbose)
+      res = self.send_search_request(ws, q)
       if 'studyResultDto' in res and 'obiba.mica.StudyResultDto.result' in res['studyResultDto']:
-          headers = ['id','name','description','studyId', 'populationId', 'start', 'end']
+          headers = ['id', 'name', 'description', 'studyId', 'populationId', 'start', 'end']
           for item in res['studyResultDto']['obiba.mica.StudyResultDto.result']['summaries']:
               if 'populationSummaries' in item:
                   for pop in item['populationSummaries']:
                       if 'dataCollectionEventSummaries' in pop:
                           for dce in pop['dataCollectionEventSummaries']:
                               if 'content' in dce:
-                                  dce['flat'] = cls.flatten(json.loads(dce['content']), args.locale)
+                                  dce['flat'] = self.__flatten(json.loads(dce['content']), locale)
                                   for key in list(dce['flat'].keys()):
                                       if key not in headers:
                                           headers.append(key)
-          writer = cls.new_writer(args.out, headers)
+          writer = self.__new_writer(out, headers)
           for item in res['studyResultDto']['obiba.mica.StudyResultDto.result']['summaries']:
               if 'populationSummaries' in item:
                   for pop in item['populationSummaries']:
                       if 'dataCollectionEventSummaries' in pop:
                           for dce in pop['dataCollectionEventSummaries']:
                               row = {
-                                  'id': item['id'] + ':' + pop['id'] + dce['id'],
-                                  'name': cls.extract_label(dce['name'], args.locale),
-                                  'description': cls.extract_label(dce['description'], args.locale) if 'description' in dce else '',
+                                  'id': item['id'] + ':' + pop['id'] + ':' + dce['id'],
+                                  'name': self.__extract_label(dce['name'], locale),
+                                  'description': self.__extract_label(dce['description'], locale) if 'description' in dce else '',
                                   'studyId': item['id'],
                                   'populationId': item['id'] + ':' + pop['id'],
                                   'start': dce['start'] if 'start' in dce else '',
@@ -231,20 +233,19 @@ class SearchService:
                                       row[key] = dce['flat'][key]
                               writer.writerow(row)
 
-  @classmethod
-  def search_datasets(cls, args, client):
-      q = cls.append_rql(args.query, 'dataset', ['*'], ['id'], args.start, args.limit, args.locale)
+  def __search_datasets(self, query='', start=0, limit=100, locale='en', out=None):
+      q = self.__append_rql(query, 'dataset', ['*'], ['id'], start, limit, locale)
       ws = UriBuilder(['datasets', '_rql']).build()
-      res = cls.send_search_request(client, ws, q, args.verbose)
+      res = self.send_search_request(ws, q)
       if 'datasetResultDto' in res and 'obiba.mica.DatasetResultDto.result' in res['datasetResultDto']:
-          headers = ['id','name','acronym','description', 'variableType', 'entityType', 'studyId', 'populationId', 'dceId']
+          headers = ['id', 'name', 'acronym', 'description', 'variableType', 'entityType', 'studyId', 'populationId', 'dceId']
           for item in res['datasetResultDto']['obiba.mica.DatasetResultDto.result']['datasets']:
               if 'content' in item:
-                  item['flat'] = cls.flatten(json.loads(item['content']), args.locale)
+                  item['flat'] = self.__flatten(json.loads(item['content']), locale)
                   for key in list(item['flat'].keys()):
                       if key not in headers:
                           headers.append(key)
-          writer = cls.new_writer(args.out, headers)
+          writer = self.__new_writer(out, headers)
           for item in res['datasetResultDto']['obiba.mica.DatasetResultDto.result']['datasets']:
               study_id = ''
               population_id = ''
@@ -255,12 +256,11 @@ class SearchService:
                   dce_id = item['obiba.mica.CollectedDatasetDto.type']['studyTable']['dceId']
               if 'obiba.mica.HarmonizedDatasetDto.type' in item:
                   study_id = item['obiba.mica.HarmonizedDatasetDto.type']['harmonizationTable']['studyId']
-                  population_id = study_id + ':' + item['obiba.mica.HarmonizedDatasetDto.type']['harmonizationTable']['populationId']
               row = {
                   'id': item['id'],
-                  'name': cls.extract_label(item['name'], args.locale),
-                  'acronym': cls.extract_label(item['acronym'], args.locale),
-                  'description': cls.extract_label(item['description'], args.locale) if 'description' in item else '',
+                  'name': self.__extract_label(item['name'], locale),
+                  'acronym': self.__extract_label(item['acronym'], locale),
+                  'description': self.__extract_label(item['description'], locale) if 'description' in item else '',
                   'variableType': item['variableType'],
                   'entityType': item['entityType'],
                   'studyId': study_id,
@@ -272,36 +272,45 @@ class SearchService:
                       row[key] = item['flat'][key]
               writer.writerow(row)
 
-  @classmethod
-  def search_variables(cls, args, client):
-      q = cls.append_rql(args.query, 'variable', ['*'], ['id'], args.start, args.limit, args.locale)
+  def search_datasets(self, query='', start=0, limit=100, locale='en', out=None):
+      typeQuery = self.__as_rql('dataset', [self.__as_rql('in', ['Mica_dataset.className', 'StudyDataset'])])
+      theQuery = '%s,%s' % (typeQuery, query) if query is not None and len(query) > 0 else typeQuery
+      self.__search_datasets(theQuery, start, limit, locale, out)
+
+  def search_protocols(self, query='', start=0, limit=100, locale='en', out=None):
+      typeQuery = self.__as_rql('dataset', [self.__as_rql('in', ['Mica_dataset.className', 'HarmonizationDataset'])])
+      theQuery = '%s,%s' % (typeQuery, query) if query is not None and len(query) > 0 else typeQuery
+      self.__search_datasets(theQuery, start, limit, locale, out)
+
+  def search_variables(self, query='', start=0, limit=100, locale='en', out=None):
+      q = self.__append_rql(query, 'variable', ['*'], ['id'], start, limit, locale)
       ws = UriBuilder(['variables', '_rql']).build()
-      res = cls.send_search_request(client, ws, q, args.verbose)
+      res = self.send_search_request(ws, q)
 
       def category_label(category):
           if 'attributes' in category:
-              labels = [cls.extract_label(label['values'], args.locale) for label in [a for a in category['attributes'] if a['name'] == 'label']]
-              return labels[0] if len(labels)>0 else ''
+              labels = [self.__extract_label(label['values'], locale) for label in [a for a in category['attributes'] if a['name'] == 'label']]
+              return labels[0] if len(labels) > 0 else ''
           else:
               return ''
 
       if 'variableResultDto' in res and 'obiba.mica.DatasetVariableResultDto.result' in res['variableResultDto']:
-          headers = ['id','name','label','description','valueType','nature','categories','categories.missing','categories.label',
-                    'datasetId','studyId','populationId','dceId',
-                    'variableType','mimeType','unit','referencedEntityType','repeatable','occurrenceGroup']
+          headers = ['id', 'name', 'label', 'description', 'valueType', 'nature', 'categories', 'categories.missing', 'categories.label',
+                    'datasetId', 'studyId', 'populationId', 'dceId',
+                    'variableType', 'mimeType', 'unit', 'referencedEntityType', 'repeatable', 'occurrenceGroup']
           for item in res['variableResultDto']['obiba.mica.DatasetVariableResultDto.result']['summaries']:
               if 'annotations' in item:
                   for annot in item['annotations']:
                       key = annot['taxonomy'] + '.' + annot['vocabulary']
                       if key not in headers:
                           headers.append(key)
-          writer = cls.new_writer(args.out, headers)
+          writer = self.__new_writer(out, headers)
           for item in res['variableResultDto']['obiba.mica.DatasetVariableResultDto.result']['summaries']:
               row = {
                   'id': item['id'],
                   'name': item['name'],
-                  'label': cls.extract_label(item['variableLabel'], args.locale) if 'variableLabel' in item else '',
-                  'description': cls.extract_label(item['description'], args.locale) if 'description' in item else '',
+                  'label': self.__extract_label(item['variableLabel'], locale) if 'variableLabel' in item else '',
+                  'description': self.__extract_label(item['description'], locale) if 'description' in item else '',
                   'datasetId': item['datasetId'],
                   'studyId': item['studyId'],
                   'populationId': item['populationId'] if 'populationId' in item else '',
@@ -325,21 +334,35 @@ class SearchService:
                       row[key] = annot['value']
               writer.writerow(row)
 
+
   @classmethod
-  def do_command(cls, args):
+  def add_arguments(self, parser):
+      '''
+      Add tags command specific options
+      '''
+      parser.add_argument('--out', '-o', required=False, help='Output file (default is stdout).')
+      parser.add_argument('--target', '-t', required=True, choices=['variable', 'dataset', 'study', 'population', 'dce', 'network'],
+                          help='Document type to be searched for.')
+      parser.add_argument('--query', '-q', required=False, help='Query that filters the documents. If not specified, no filter is applied.')
+      parser.add_argument('--start', '-s', required=False, type=int, default=0, help='Start search at document position.')
+      parser.add_argument('--limit', '-lm', required=False, type=int, default=100, help='Max number of documents.')
+      parser.add_argument('--locale', '-lc', required=False, default='en', help='The language for labels.')
+
+  @classmethod
+  def do_command(self, args):
       '''
       Execute search command
       '''
       client = MicaClient.build(MicaClient.LoginInfo.parse(args))
       if args.target == 'network':
-          cls.search_networks(args, client)
+          self.search_networks(args, client)
       elif args.target == 'study':
-          cls.search_studies(args, client)
+          self.search_studies(args, client)
       elif args.target == 'population':
-          cls.search_study_populations(args, client)
+          self.search_study_populations(args, client)
       elif args.target == 'dce':
-          cls.search_study_dces(args, client)
+          self.search_study_dces(args, client)
       elif args.target == 'dataset':
-          cls.search_datasets(args, client)
+          self.search_datasets(args, client)
       elif args.target == 'variable':
-          cls.search_variables(args, client)
+          self.search_variables(args, client)

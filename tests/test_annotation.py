@@ -6,18 +6,17 @@ from os import path, remove
 
 class TestClass(unittest.TestCase):
 
-  def setup_class(self):
-    self.parser = Utils.make_arg_parser()
-    AnnotationService.add_arguments(self.parser)
+  @classmethod
+  def setup_class(cls):
+    cls.service = AnnotationService(Utils.make_client())
 
   def test_datasetAnnotation(self):
     try:
       outputFile = '/tmp/cls-wave1.csv'
-      service  = AnnotationService(Utils.make_client())
-      writer = service.create_writer(outputFile)
+      writer = self.service.create_writer(outputFile)
       writer.writeheader()
 
-      service.write_dataset_variable_annotations('cls-wave1', writer)
+      self.service.write_dataset_variable_annotations('cls-wave1', writer)
 
       if path.exists(outputFile):
         remove(outputFile)
@@ -27,4 +26,3 @@ class TestClass(unittest.TestCase):
       assert True
     except Exception as e:
       assert False
-      

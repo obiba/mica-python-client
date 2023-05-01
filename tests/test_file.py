@@ -5,8 +5,9 @@ import json
 
 class TestClass(unittest.TestCase):
 
-  def setup_class(self):
-    self.service = FileService(Utils.make_client())
+  @classmethod
+  def setup_class(cls):
+    cls.service = FileService(Utils.make_client())
 
   def test_1_fileUpload(self):
     try:

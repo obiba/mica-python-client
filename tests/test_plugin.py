@@ -6,8 +6,9 @@ class TestClass(unittest.TestCase):
   __test__ = False # This test needs Mica to restart for each action, only useful for manual and controlled tests
 
 
-  def setup_class(self):
-    self.service = PluginService(Utils.make_client())    
+  @classmethod
+  def setup_class(cls):
+    cls.service = PluginService(Utils.make_client())
 
   def test_addSearchPlugin(self):
     try:

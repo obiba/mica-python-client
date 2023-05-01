@@ -1,5 +1,5 @@
 import sys
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentParser
 from obiba_mica import MicaClient
 
 class Utils:
