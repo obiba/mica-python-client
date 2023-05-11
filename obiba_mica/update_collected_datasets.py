@@ -3,10 +3,44 @@ Update several existing collected dataset, mainly for managing the linkage with 
 """
 
 from obiba_mica.core import MicaClient
+from obiba_mica.update_collected_dataset import CollectedDatasetService
 import json
 import re
 
 class CollectedDatasetsService:
+
+  def __init__(self, client: MicaClient, verbose: bool = False):
+     self.client = client
+     self.verbose = verbose
+     self.datasetService = CollectedDatasetService(client, verbose)
+
+  def new_request(self):
+      request = self.client.new_request()
+      request.fail_on_error()
+      request.accept_json()
+      if self.verbose:
+          request.verbose()
+      return request
+
+  def update(self, datasetId:str, project:str):
+      return self.datasetService.update(datasetId, project=project)
+
+  def publish(self, datasetId:str):
+      return self.datasetService.publish(datasetId)
+
+  def unpublish(self, datasetId: str):
+      return self.datasetService.unpublish(datasetId)
+
+  def get_dataset(self, id: str):
+      return self.datasetService.get_dataset(id)
+
+  def get_datasets(self, pattern: str):
+      path = '/draft/collected-datasets'
+      request = self.new_request()
+      response = request.get().resource(path).send()
+      datasets = json.loads(response.content)
+
+      return list(filter(lambda dataset: re.match(pattern, dataset['id']), datasets))
 
   @classmethod
   def add_arguments(cls, parser):
@@ -20,67 +54,26 @@ class CollectedDatasetsService:
       parser.add_argument('--unpublish', '-un', action='store_true', help='Unpublish the collected dataset')
 
   @classmethod
-  def new_request(cls, args):
-      request = MicaClient.build(MicaClient.LoginInfo.parse(args)).new_request()
-      request.fail_on_error()
-      request.accept_json()
-      if args.verbose:
-          request.verbose()
-      return request
-
-  @classmethod
-  def do_update(cls, path, args, id):
-      print("Updating " + id + "...")
-      # get existing and remove useless fields
-      request = cls.new_request(args)
-      response = request.get().resource(path).send()
-      dataset = json.loads(response.content)
-      dataset.pop('obiba.mica.EntityStateDto.datasetState', None)
-      dataset.pop('variableType', None)
-      dataset.pop('timestamps', None)
-      dataset.pop('published', None)
-      dataset.pop('permissions', None)
-      if 'obiba.mica.CollectedDatasetDto.type' not in dataset:
-          raise ValueError("Study table is missing in " + id)
-      dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'].pop('studySummary', None)
-
-      # update
-      comment = []
-      if args.project:
-          comment.append('Project: ' + args.project)
-          dataset['obiba.mica.CollectedDatasetDto.type']['studyTable']['project'] = args.project
-      request = cls.new_request(args)
-      request.put().resource(path).query({ 'comment': ', '.join(comment) + ' (update-collected-datasets)' }).content_type_json()
-      request.content(json.dumps(dataset, separators=(',',':')))
-      if args.verbose:
-          print("Updated: ")
-          print(json.dumps(dataset, sort_keys=True, indent=2, separators=(',', ': ')))
-      request.send()
-
-  @classmethod
   def do_command(cls, args):
       """
       Execute datasets update command
       """
       # Build and send request
-      path = '/draft/collected-datasets'
-      request = cls.new_request(args)
-      response = request.get().resource(path).send()
-      datasets = json.loads(response.content)
+      datasetsService = CollectedDatasetsService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
+      datasets = datasetsService.get_datasets(args.id)
+
       for dataset in datasets:
           id = dataset['id']
-          if re.match(args.id, id):
-              if args.dry:
-                  print(id)
-              else:
-                  path = '/draft/collected-dataset/' + id
-                  if args.project:
-                      cls.do_update(path, args, id)
-                  if args.publish:
-                      print("Publishing " + id + "...")
-                      request = cls.new_request(args)
-                      request.put().resource(path + '/_publish').send()
-                  if args.unpublish:
-                      print("Unpublishing " + id + "...")
-                      request = cls.new_request(args)
-                      request.delete().resource(path + '/_publish').send()
+          if args.dry:
+              print(id)
+          else:
+              if args.project:
+                  datasetsService.update(id,args.project)
+              if args.publish:
+                  if args.verbose:
+                    print("Publishing " + id + "...")
+                  datasetsService.publish(id)
+              elif args.unpublish:
+                  if args.verbose:
+                    print("Unpublishing " + id + "...")
+                  datasetsService.unpublish(id)
