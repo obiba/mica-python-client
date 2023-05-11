@@ -4,6 +4,7 @@
 import argparse
 import sys
 
+from obiba_mica.core import HTTPError
 from obiba_mica.rest import RestService
 from obiba_mica.file import FileService
 from obiba_mica.access import ProjectAccessService, NetworkAccessService, IndividualStudyAccessService, HarmonizationInitiativeAccessService, CollectedDatasetAccessService, HarmonizationProtocolAccessService, FileAccessService
@@ -102,8 +103,8 @@ def run():
     if hasattr(args, 'func'):
         try:
             args.func(args)
-        except Exception as e:
-            print(e)
+        except HTTPError as e:
+            print(e.error['status'] if e.error is not None else e)
             sys.exit(2)
     else:
       print('Mica command line tool.')

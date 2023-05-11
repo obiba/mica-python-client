@@ -1,9 +1,7 @@
 import unittest
 from obiba_mica.search import SearchService
-from obiba_mica.core import HTTPError
 from tests.utils import Utils
-from io import StringIO, BytesIO
-import sys
+from io import StringIO
 
 class TestClass(unittest.TestCase):
 

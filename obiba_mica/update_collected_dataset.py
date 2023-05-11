@@ -7,34 +7,34 @@ import json
 
 class StudyTableBuilder:
 
-    def __init__(self, table: None):
-        self = table if table is not None else {}
+    def __init__(self, studyTable: None):
+        self.studyTable = studyTable if studyTable is not None else {}
 
     def study(self, value):
-        self['studyId'] = value
+        self.studyTable['studyId'] = value
         return self
 
     def population(self, value):
-        self['populationId'] = value
+        self.studyTable['populationId'] = value
         return self
 
     def dce(self, value):
-        self['dataCollectionEventId'] = value
+        self.studyTable['dataCollectionEventId'] = value
         return self
 
     def project(self, value):
-        self['project'] = value
+        self.studyTable['project'] = value
         return self
 
     def table(self, value):
-        self['table'] = value
+        self.studyTable['table'] = value
         return self
-    
+
     def build(self):
-        return self.table
+        return self.studyTable
 
 class CollectedDatasetService:
-  
+
   def __init__(self, client: MicaClient, verbose: bool = False):
      self.client = client
      self.verbose = verbose
@@ -46,24 +46,24 @@ class CollectedDatasetService:
       if self.verbose:
           request.verbose()
       return request
-  
+
   def get_dataset(self, id):
       path = '/draft/collected-dataset/' + id
       request = self.new_request()
       response = request.get().resource(path).send()
-      return json.loads(response.content)   
-  
-  def update_study_table(self, dataset, comment = [], study: str = None, population: str = None, dce: str = None, project: str = None, table: str = None):
+      return json.loads(response.content)
+
+  def update_study_table(self, dataset, comment=[], study: str = None, population: str = None, dce: str = None, project: str = None, table: str = None):
       dataset.pop('obiba.mica.EntityStateDto.datasetState', None)
       dataset.pop('variableType', None)
       dataset.pop('timestamps', None)
       dataset.pop('published', None)
       dataset.pop('permissions', None)
-      
+
       if 'obiba.mica.CollectedDatasetDto.type' not in dataset:
           if not study or not population or not dce or not project or not table:
               raise ValueError("Study table is missing and cannot be created.")
-          dataset['obiba.mica.CollectedDatasetDto.type'] = { 'studyTable': { } }
+          dataset['obiba.mica.CollectedDatasetDto.type'] = {'studyTable': {}}
       dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'].pop('studySummary', None)
 
       builder = StudyTableBuilder(dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'])
@@ -84,34 +84,40 @@ class CollectedDatasetService:
           builder.project(project)
       if table:
           comment.append('Table: ' + table)
-          builder.table9(table)
+          builder.table(table)
 
-      dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'] = builder.build()   
+      dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'] = builder.build()
 
   def update_dataset(self, dataset, comment):
-      path = '/draft/collected-dataset/' + dataset.id
+      path = '/draft/collected-dataset/%s' % dataset['id']
       request = self.new_request()
-      request.put().resource(path).query({ 'comment': ', '.join(comment) + ' (update-collected-dataset)' }).content_type_json()
-      request.content(json.dumps(dataset, separators=(',',':')))
+      request.put().resource(path).query({'comment': ', '.join(comment) + ' (update-collected-dataset)'}).content_type_json()
+      request.content(json.dumps(dataset, separators=(',', ':')))
       if self.verbose:
           print("Updated: ")
           print(json.dumps(dataset, sort_keys=True, indent=2, separators=(',', ': ')))
-      request.send()
+      return request.send()
 
-  def do_update(self, path, datasetId: str, study: str = None, population: str = None, dce: str = None, project: str = None, table: str = None):
-      print("Updating " + datasetId + "...")
+  def update(self, datasetId: str, study: str = None, population: str = None, dce: str = None, project: str = None, table: str = None):
+      if self.verbose:
+          print("Updating %s ..." % datasetId)
+
       # get existing and remove useless fields
-      dataset = self.get_dataset(datasetId, path)
+      dataset = self.get_dataset(datasetId)
       comment = []
       self.update_study_table(dataset, comment, study, population, dce, project, table)
+      return self.update_dataset(dataset, comment)
 
-      request = self.new_request()
-      request.put().resource(path).query({ 'comment': ', '.join(comment) + ' (update-collected-dataset)' }).content_type_json()
-      request.content(json.dumps(dataset, separators=(',',':')))
-      if self.verbose:
-          print("Updated: ")
-          print(json.dumps(dataset, sort_keys=True, indent=2, separators=(',', ': ')))
-      request.send()
+  def __publish(self, datasetId: str, method: str = 'PUT'):
+    path = '/draft/collected-dataset/%s' % datasetId
+    request = self.new_request()
+    return request.method(method).resource(path + '/_publish').send()
+
+  def publish(self, datasetId: str):
+    return self.__publish(datasetId, 'PUT')
+
+  def unpublish(self, datasetId: str):
+    return self.__publish(datasetId, 'DELETE')
 
   @classmethod
   def add_arguments(cls, parser):
@@ -134,16 +140,15 @@ class CollectedDatasetService:
       """
       # Build and send request
       service = CollectedDatasetService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
-      path = '/draft/collected-dataset/' + args.id
+
       if args.project or args.table:
-          service.do_update(path, args)
+          service.update(args.id, args.study, args.population, args.dce, args.project, args.table)
 
       if args.publish:
-          print("Publishing " + args.id + "...")
-          request = cls.new_request(args)
-          request.put().resource(path + '/_publish').send()
-
-      if args.unpublish:
-          print("Unpublishing " + args.id + "...")
-          request = cls.new_request(args)
-          request.delete().resource(path + '/_publish').send()
+          if args.verbose:
+              print("Publishing " + args.id + "...")
+          service.publish(args.id)
+      elif args.unpublish:
+          if args.verbose:
+              print("Unpublishing " + args.id + "...")
+          service.unpublish(args.id)
