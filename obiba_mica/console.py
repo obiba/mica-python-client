@@ -4,27 +4,17 @@
 import argparse
 import sys
 
-import obiba_mica.file as file
-import obiba_mica.rest as rest
-import obiba_mica.import_zip as import_zip
-import obiba_mica.perm_network as perm_network
-import obiba_mica.perm_project as perm_project
-import obiba_mica.perm_individual_study as perm_individual_study
-import obiba_mica.perm_harmonization_study as perm_harmonization_study
-import obiba_mica.perm_collected_dataset as perm_collected_dataset
-import obiba_mica.perm_harmonized_dataset as perm_harmonized_dataset
-import obiba_mica.access_network as access_network
-import obiba_mica.access_project as access_project
-import obiba_mica.access_individual_study as access_individual_study
-import obiba_mica.access_harmonization_study as access_harmonization_study
-import obiba_mica.access_collected_dataset as access_collected_dataset
-import obiba_mica.access_harmonized_dataset as access_harmonized_dataset
-import obiba_mica.access_file as access_file
-import obiba_mica.search as search
-import obiba_mica.plugin as plugin
-import obiba_mica.tags as tags
-import obiba_mica.update_collected_dataset as update_collected_dataset
-import obiba_mica.update_collected_datasets as update_collected_datasets
+from obiba_mica.core import HTTPError
+from obiba_mica.rest import RestService
+from obiba_mica.file import FileService
+from obiba_mica.access import ProjectAccessService, NetworkAccessService, IndividualStudyAccessService, HarmonizationInitiativeAccessService, CollectedDatasetAccessService, HarmonizationProtocolAccessService, FileAccessService
+from obiba_mica.perm import ProjectPermissionService, NetworkPermissionService, HarmonizationInitiativePermissionService, HarmonizationProtocolPermissionService, IndividualStudyPermissionService, CollectedDatasetPermissionService
+from obiba_mica.import_zip import FileImportService
+from obiba_mica.search import SearchService
+from obiba_mica.annotation import AnnotationService
+from obiba_mica.plugin import PluginService
+from obiba_mica.update_collected_dataset import CollectedDatasetService
+from obiba_mica.update_collected_datasets import CollectedDatasetsService
 
 def add_mica_arguments(parser):
     """
@@ -60,62 +50,61 @@ def run():
 
     # Add subcommands
     add_subcommand(subparsers, 'import-zip', 'Import data from zip file(s) that have been extracted from old Mica',
-                  import_zip.add_arguments, import_zip.do_command)
-    add_subcommand(subparsers, 'file', 'Mica file system actions, for advanced users.', file.add_arguments,
-                  file.do_command)
-
+                  FileImportService.add_arguments, FileImportService.do_command)
+    add_subcommand(subparsers, 'file', 'Mica file system actions, for advanced users.', FileService.add_arguments,
+                  FileService.do_command)
     add_subcommand(subparsers, 'perm-network', 'Apply permission on a network.',
-                  perm_network.add_arguments, perm_network.do_command)
+                  NetworkPermissionService.add_arguments, NetworkPermissionService.do_command)
     add_subcommand(subparsers, 'perm-project', 'Apply permission on a research project.',
-                  perm_project.add_arguments, perm_project.do_command)
+                  ProjectPermissionService.add_arguments, ProjectPermissionService.do_command)
     add_subcommand(subparsers, 'perm-individual-study', 'Apply permission on an individual study.',
-                  perm_individual_study.add_arguments, perm_individual_study.do_command)
-    add_subcommand(subparsers, 'perm-harmonization-study', 'Apply permission on a harmonization study.',
-                  perm_harmonization_study.add_arguments, perm_harmonization_study.do_command)
+                  IndividualStudyPermissionService.add_arguments, IndividualStudyPermissionService.do_command)
+    add_subcommand(subparsers, 'perm-harmonization-initiative', 'Apply permission on a harmonization initiative.',
+                  HarmonizationInitiativePermissionService.add_arguments, HarmonizationInitiativePermissionService.do_command)
     add_subcommand(subparsers, 'perm-collected-dataset', 'Apply permission on a collected dataset.',
-                  perm_collected_dataset.add_arguments, perm_collected_dataset.do_command)
-    add_subcommand(subparsers, 'perm-harmonized-dataset', 'Apply permission on a harmonized dataset.',
-                  perm_harmonized_dataset.add_arguments, perm_harmonized_dataset.do_command)
+                  CollectedDatasetPermissionService.add_arguments, CollectedDatasetPermissionService.do_command)
+    add_subcommand(subparsers, 'perm-harmonization-protocol', 'Apply permission on a harmonization protocol.',
+                  HarmonizationProtocolPermissionService.add_arguments, HarmonizationProtocolPermissionService.do_command)
 
     add_subcommand(subparsers, 'access-network', 'Apply access on a network.',
-                  access_network.add_arguments, access_network.do_command)
+                  NetworkAccessService.add_arguments, NetworkAccessService.do_command)
     add_subcommand(subparsers, 'access-project', 'Apply access on a research project.',
-                  access_project.add_arguments, access_project.do_command)
+                  ProjectAccessService.add_arguments, ProjectAccessService.do_command)
     add_subcommand(subparsers, 'access-individual-study', 'Apply access on an individual study.',
-                  access_individual_study.add_arguments, access_individual_study.do_command)
-    add_subcommand(subparsers, 'access-harmonization-study', 'Apply access on a harmonization study.',
-                  access_harmonization_study.add_arguments, access_harmonization_study.do_command)
+                  IndividualStudyAccessService.add_arguments, IndividualStudyAccessService.do_command)
+    add_subcommand(subparsers, 'access-harmonization-initiative', 'Apply access on a harmonization initiative.',
+                  HarmonizationInitiativeAccessService.add_arguments, HarmonizationInitiativeAccessService.do_command)
     add_subcommand(subparsers, 'access-collected-dataset', 'Apply access on a collected dataset.',
-                  access_collected_dataset.add_arguments, access_collected_dataset.do_command)
-    add_subcommand(subparsers, 'access-harmonized-dataset', 'Apply access on a harmonized dataset.',
-                  access_harmonized_dataset.add_arguments, access_harmonized_dataset.do_command)
+                  CollectedDatasetAccessService.add_arguments, CollectedDatasetAccessService.do_command)
+    add_subcommand(subparsers, 'access-harmonization-protocol', 'Apply access on a harmonization protocol.',
+                  HarmonizationProtocolAccessService.add_arguments, HarmonizationProtocolAccessService.do_command)
     add_subcommand(subparsers, 'access-file', 'Apply access on a file.',
-                  access_file.add_arguments, access_file.do_command)
+                  FileAccessService.add_arguments, FileAccessService.do_command)
 
-    add_subcommand(subparsers, 'search', 'Perform a search query on variables, datasets, studies (including populations and data collection events) and networks.', search.add_arguments,
-                  search.do_command)
+    add_subcommand(subparsers, 'search', 'Perform a search query on variables, datasets, studies (including populations and data collection events) and networks.', SearchService.add_arguments,
+                  SearchService.do_command)
 
-    add_subcommand(subparsers, 'tags', 'Extract classification tags from published variables.', tags.add_arguments,
-                  tags.do_command)
+    add_subcommand(subparsers, 'annotations', 'Extract classification annotations from published variables.', AnnotationService.add_arguments,
+                  AnnotationService.do_command)
 
-    add_subcommand(subparsers, 'update-collected-dataset', 'Update collected dataset linkage with an Opal table.', update_collected_dataset.add_arguments,
-                  update_collected_dataset.do_command)
-    add_subcommand(subparsers, 'update-collected-datasets', 'Update collected datasets linkage with an Opal table.', update_collected_datasets.add_arguments,
-                  update_collected_datasets.do_command)
+    add_subcommand(subparsers, 'update-collected-dataset', 'Update collected dataset linkage with an Opal table.', CollectedDatasetService.add_arguments,
+                  CollectedDatasetService.do_command)
+    add_subcommand(subparsers, 'update-collected-datasets', 'Update collected datasets linkage with an Opal table.', CollectedDatasetsService.add_arguments,
+                  CollectedDatasetsService.do_command)
 
-    add_subcommand(subparsers, 'plugin', 'Manage system plugins.', plugin.add_arguments,
-                  plugin.do_command)
+    add_subcommand(subparsers, 'plugin', 'Manage system plugins.', PluginService.add_arguments,
+                  PluginService.do_command)
 
-    add_subcommand(subparsers, 'rest', 'Request directly the Mica REST API, for advanced users.', rest.add_arguments,
-                  rest.do_command)
+    add_subcommand(subparsers, 'rest', 'Request directly the Mica REST API, for advanced users.', RestService.add_arguments,
+                  RestService.do_command)
 
     # Execute selected command
     args = parser.parse_args()
     if hasattr(args, 'func'):
         try:
             args.func(args)
-        except Exception as e:
-            print(e)
+        except HTTPError as e:
+            print(e.error['status'] if e.error is not None else e)
             sys.exit(2)
     else:
       print('Mica command line tool.')

@@ -6,10 +6,23 @@ authors = ["Yannick Marcon <yannick.marcon@obiba.org>"]
 license = "GPL-v3"
 readme = "README.md"
 packages = [{include = "obiba_mica"}]
+homepage = "https://www.obiba.org"
+repository = "https://github.com/obiba/mica-python-client"
+documentation = "https://micadoc.obiba.org/en/latest/python-user-guide/"
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/obiba/mica-python-client/issues"
 
 [tool.poetry.dependencies]
 python = "^3.7"
 pycurl = "^7.45.2"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2.2"
+
+
+[tool.poetry.group.dev.dependencies]
+autopep8 = "^2.0.2"
 
 [tool.poetry.scripts]
 mica = 'obiba_mica.console:run'

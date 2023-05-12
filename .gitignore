@@ -27,4 +27,7 @@ coverage
 *.sln
 *.sw?
 
+.history
 __pycache__
+
+debug.py
