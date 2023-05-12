@@ -74,7 +74,7 @@ class TestClass(unittest.TestCase):
     for dataset in TestClass.datasets:
       self.__updateProjects(dataset, 'CLS')
 
-  def test__4_unpublish(self):
+  def test_4_unpublish(self):
     for dataset in TestClass.datasets:
       self.__unpublish(dataset)
 
