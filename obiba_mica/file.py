@@ -80,7 +80,7 @@ class FileService(object):
     return self._get_request().put().resource('%s?copy=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
   def move(self, file, dest):
-    self._validate_status(file, elf.STATUS_DRAFT)
+    self._validate_status(file, self.STATUS_DRAFT)
     return self._get_request().put().resource('%s?move=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
   def name(self, file, name):
