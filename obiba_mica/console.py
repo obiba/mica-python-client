@@ -16,13 +16,16 @@ from obiba_mica.plugin import PluginService
 from obiba_mica.update_collected_dataset import CollectedDatasetService
 from obiba_mica.update_collected_datasets import CollectedDatasetsService
 
+def prompt_password():
+    return input('Enter password:')
+
 def add_mica_arguments(parser):
     """
     Add Mica access arguments
     """
     parser.add_argument('--mica', '-mk', required=False, default='http://localhost:8082', help='Mica server base url (default: http://localhost:8082)')
     parser.add_argument('--user', '-u', required=False, help='User name')
-    parser.add_argument('--password', '-p', required=False, help='User password')
+    parser.add_argument('--password', '-p', nargs="?", required=False, help='User password')
     parser.add_argument('--otp', '-ot', action='store_true', help='Whether a one-time password is to be provided (required when connecting with username/password AND two-factor authentication is enabled)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
 
@@ -100,6 +103,10 @@ def run():
 
     # Execute selected command
     args = parser.parse_args()
+
+    if not args.password or len(args.password) == 0:
+        args.password = prompt_password()
+
     if hasattr(args, 'func'):
         try:
             args.func(args)
