@@ -73,11 +73,6 @@ class RestService:
             print('Enter content:')
             request.content(sys.stdin.read())
 
-        if args.headers:
-            headers = ast.literal_eval(args.headers)
-            for key in list(headers.keys()):
-                request.header(key, headers[key])
-
         if args.verbose:
             request.verbose()
 
