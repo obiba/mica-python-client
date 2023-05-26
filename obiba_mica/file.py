@@ -9,7 +9,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import re
-
+import os
 
 class FileAction(argparse.Action):
   def __call__(self, parser, namespace, values, option_string=None):
@@ -100,8 +100,7 @@ class FileService(object):
     return self.publish(False)
 
   def upload(self, file, upload):
-    response = self._get_request().content_upload(upload).accept('text/html')\
-        .content_type('multipart/form-data').post().resource('/files/temp').send()
+    response = self._get_request().content_upload(upload).post().resource('/files/temp').send()
 
     location = None
     if 'Location' in response.headers:
@@ -113,7 +112,7 @@ class FileService(object):
     temp_file = self._get_request().get().resource(job_resource).send().as_json()
     fileName = temp_file.pop('name', '')
     temp_file.update(
-        dict(fileName=fileName, justUploaded=True, path=MicaFile(file).path))
+        dict(fileName=os.path.basename(fileName), justUploaded=True, path=MicaFile(file).path))
 
     return self._get_request().post().resource(self.FILES_WS).content_type_json().content(
         json.dumps(temp_file)).send()
@@ -121,7 +120,7 @@ class FileService(object):
   def download(self, file, *args):
     return self._get_request().get().resource(MicaFile(file).get_dl_ws()).send()
 
-  def delete(self, file, *args):
+  def   delete(self, file, *args):
     self._validate_status(file, self.STATUS_DELETED)
     return self._get_request().delete().resource(MicaFile(file).get_ws()).send()
 

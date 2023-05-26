@@ -16,7 +16,6 @@ class FileImportService:
       request = self.client.new_request()
       request.method('POST')
       request.fail_on_error()
-      request.content_type('multipart/form-data')
       request.accept_json()
       if self.verbose:
           request.verbose()

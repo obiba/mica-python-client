@@ -24,6 +24,10 @@ class MicaClient:
         self.session = Session()
         self.base_url = self.__ensure_entry('Mica address', server)
 
+    def __del__(self):
+        print('closed')
+        self.close()
+
     @classmethod
     def build(cls, loginInfo):
         return MicaClient.buildWithAuthentication(loginInfo.data['server'], loginInfo.data['user'],
@@ -74,6 +78,16 @@ class MicaClient:
 
     def new_request(self):
         return MicaRequest(self)
+
+    def close(self):
+        """
+        Close client session and request to close Mica server session
+        """
+        try:
+            self.new_request().resource('/auth/session/_current').delete().send()
+            self.session.close()
+        except Exception as e:
+            pass
 
     class LoginInfo:
         data = None
@@ -201,7 +215,8 @@ class MicaRequest:
         self._verbose = False
         self.params = {}
         self._fail_on_error = False
-
+        self.files = None
+        self.data = None
 
     def timeout(self, value):
         self.options['timeout'] = value
@@ -222,14 +237,18 @@ class MicaRequest:
 
     def header(self, key, value):
         if value:
-            self.headers[key] = value
+            header = {}
+            header[key] = value
+            self.headers.update(header)
         return self
 
     def accept(self, value):
-        return self.headers.update({'Accept': value})
+        self.headers.update({'Accept': value})
+        return self
 
     def content_type(self, value):
-        return self.headers.update({'Content-Type': value})
+        self.headers.update({'Content-Type': value})
+        return self
 
     def accept_json(self):
         return self.accept('application/json')
@@ -242,6 +261,13 @@ class MicaRequest:
 
     def content_type_form(self):
         return self.content_type('application/x-www-form-urlencoded')
+
+    def content_upload(self, filename):
+        if self._verbose:
+            print('* File Content:')
+            print('[file=' + filename + ', size=' + str(os.path.getsize(filename)) + ']')
+        self.files = {'file': (filename, open(filename, 'rb'))}
+        return self
 
     def method(self, method):
         if not method:
@@ -285,7 +311,9 @@ class MicaRequest:
         if self._verbose:
             print('* Content:')
             print(content)
-        self.content = content
+
+        self.data = content
+        return self
 
     def __build_request(self):
         request = Request()
@@ -307,6 +335,12 @@ class MicaRequest:
                 request.params = self.params
         else:
             raise ValueError('Resource is missing')
+
+        if self.files is not None:
+            request.files = self.files
+
+        if self.data is not None:
+            request.data = self.data
 
         return request
 
