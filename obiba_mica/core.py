@@ -25,7 +25,6 @@ class MicaClient:
         self.base_url = self.__ensure_entry('Mica address', server)
 
     def __del__(self):
-        print('closed')
         self.close()
 
     @classmethod
@@ -225,9 +224,9 @@ class MicaRequest:
     def connection_timeout(self, value):
         self.options['connection_timeout'] = value
 
-    def verbose(self, value):
-        # logging.basicConfig(level=logging.DEBUG)
-        self._verbose = value
+    def verbose(self):
+        logging.basicConfig(level=logging.DEBUG)
+        self._verbose = True
         return self
 
     def fail_on_error(self):
@@ -306,6 +305,9 @@ class MicaRequest:
         self.params = parameters
 
       return self
+
+    def form(self, parameters):
+        return self.content(parameters)
 
     def content(self, content):
         if self._verbose:
@@ -680,7 +682,7 @@ class MicaService:
     if not fail_safe:
         request.fail_on_error()
     if self.verbose:
-        request.verbose()
+        request.verbose(self.verbose)
     return request
 
 class HTTPError(Exception):
