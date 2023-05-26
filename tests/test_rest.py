@@ -19,6 +19,16 @@ class TestClass(unittest.TestCase):
     except Exception as e:
       assert False
 
+  def test_validRestCallWithParams(self):
+    try:
+      response = self.service.send_request('/draft/study-states', self.service.make_request('GET').query(('query', 'cls*'))).as_json()
+      if isinstance(response, list) and len(list(filter(lambda r: r['id'] == 'cls', response))) > 1:
+        assert False
+
+      assert True
+    except Exception as e:
+      assert False
+
   def test_invalidRestCall(self):
     try:
       response = self.service.send_request('/draft/individual-study/potato', self.service.make_request('GET')).as_json()

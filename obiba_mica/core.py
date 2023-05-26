@@ -12,9 +12,93 @@ import getpass
 from http import HTTPStatus
 import urllib.request, urllib.parse, urllib.error
 from functools import reduce
-
+from requests import Session, Request, Response
+import logging
 
 class MicaClient:
+    """
+    Mica Client
+    """
+
+    def __init__(self, server=None):
+        self.session = Session()
+        self.base_url = self.__ensure_entry('Mica address', server)
+
+    @classmethod
+    def build(cls, loginInfo):
+        return MicaClient.buildWithAuthentication(loginInfo.data['server'], loginInfo.data['user'],
+                                                  loginInfo.data['password'], loginInfo.data['otp'])
+
+    @classmethod
+    def buildWithAuthentication(cls, server, user, password, otp):
+        client = cls(server)
+        if client.base_url.startswith('https:'):
+            client.session.verify = False
+
+        client.credentials(user, password, otp)
+        return client
+
+    def credentials(self, user, password, otp):
+        u = self.__ensure_entry('User name', user)
+        p = self.__ensure_entry('Password', password, True)
+        if otp:
+            val = input("Enter 6-digits code: ")
+            self.session.headers.update({'X-Obiba-TOTP': val})
+
+        self.session.headers.update({'Authorization': 'Basic %s' % base64.b64encode(('%s:%s' % (u, p)).encode("utf-8")).decode("utf-8")})
+
+    def __ensure_entry(self, text, entry, pwd=False):
+        e = entry
+        if not entry:
+            if pwd:
+                e = getpass.getpass(prompt=text + ': ')
+            else:
+                e = input(text + ': ')
+        return e
+
+    def verify(self, value):
+        """
+        Ignore or validate certificate
+
+        :param value = True/False to validation or not. Value can also be a CA_BUNDLE file or directory (e.g. 'verify=/etc/ssl/certs/ca-certificates.crt')
+        """
+        self.session.verify = value
+        return self
+
+    def header(self, key, value):
+        header = {}
+        header[key] = value
+
+        self.session.headers.update(header)
+        return self
+
+    def new_request(self):
+        return MicaRequest(self)
+
+    class LoginInfo:
+        data = None
+
+        @classmethod
+        def parse(cls, args):
+            data = {}
+            argv = vars(args)
+
+            if argv.get('mica'):
+                data['server'] = argv['mica']
+            else:
+                raise ValueError('Mica server information is missing.')
+
+            if argv.get('user') and argv.get('password'):
+                data['user'] = argv['user']
+                data['password'] = argv['password']
+                data['otp'] = argv['otp']
+            else:
+                raise ValueError('Invalid login information. Requires user and password.')
+
+            setattr(cls, 'data', data)
+            return cls()
+
+class MicaClientOld:
     """
     MicaClient holds the configuration for connecting to Mica.
     """
@@ -106,6 +190,136 @@ class MicaClient:
             return cls()
 
 class MicaRequest:
+    """
+    Mica request.
+    """
+
+    def __init__(self, mica_client):
+        self.client = mica_client
+        self.options = {}
+        self.headers = {'Accept': 'application/json'}
+        self._verbose = False
+        self.params = {}
+        self._fail_on_error = False
+
+
+    def timeout(self, value):
+        self.options['timeout'] = value
+        return self
+
+    def connection_timeout(self, value):
+        self.options['connection_timeout'] = value
+
+    def verbose(self, value):
+        # logging.basicConfig(level=logging.DEBUG)
+        self._verbose = value
+        return self
+
+    def fail_on_error(self):
+        # return self.curl_option(pycurl.FAILONERROR, True)
+        self._fail_on_error = True
+        return self
+
+    def header(self, key, value):
+        if value:
+            self.headers[key] = value
+        return self
+
+    def accept(self, value):
+        return self.headers.update({'Accept': value})
+
+    def content_type(self, value):
+        return self.headers.update({'Content-Type': value})
+
+    def accept_json(self):
+        return self.accept('application/json')
+
+    def content_type_json(self):
+        return self.content_type('application/json')
+
+    def content_type_text_plain(self):
+        return self.content_type('text/plain')
+
+    def content_type_form(self):
+        return self.content_type('application/x-www-form-urlencoded')
+
+    def method(self, method):
+        if not method:
+            self.method = 'GET'
+        elif method in ['GET', 'DELETE', 'PUT', 'POST', 'OPTIONS']:
+            self.method = method
+        else:
+            raise ValueError('Not a valid method: ' + method)
+        return self
+
+    def get(self):
+        return self.method('GET')
+
+    def put(self):
+        return self.method('PUT')
+
+    def post(self):
+        return self.method('POST')
+
+    def delete(self):
+        return self.method('DELETE')
+
+    def options(self):
+        return self.method('OPTIONS')
+
+    def resource(self, ws):
+        self.resource = ws
+        return self
+
+    def query(self, parameters):
+      if isinstance(parameters, tuple):
+        param = {}
+        param[parameters[0]] = parameters[1]
+        self.params.update(param)
+      else:
+        self.params = parameters
+
+      return self
+
+    def content(self, content):
+        if self._verbose:
+            print('* Content:')
+            print(content)
+        self.content = content
+
+    def __build_request(self):
+        request = Request()
+        request.method = self.method if self.method else 'GET'
+
+        for option in self.options:
+            setattr(request, option, self.options[option])
+
+        # headers
+        request.headers = {}
+        request.headers.update(self.client.session.headers)
+        request.headers.update(self.headers)
+
+        if self.resource:
+            path = self.resource
+            request.url = self.client.base_url + '/ws' + path
+
+            if self.params:
+                request.params = self.params
+        else:
+            raise ValueError('Resource is missing')
+
+        return request
+
+
+    def send(self):
+        request = self.__build_request()
+        response = MicaResponse(self.client.session.send(request.prepare()))
+
+        if self._fail_on_error and response.code >= 400:
+            raise HTTPError(response)
+
+        return response
+class MicaRequestOld:
     """
     Mica request.
     """
@@ -311,6 +525,41 @@ class MicaResponse:
     Response from Mica: code, headers and content
     """
 
+    def __init__(self, response):
+        self.response = response
+
+    @property
+    def code(self):
+        return self.response.status_code
+
+    @property
+    def headers(self):
+        return self.response.headers
+
+    @property
+    def content(self):
+        return self.response.content
+
+    def as_json(self):
+        if self.response is None or self.response.content is None:
+            return None
+
+        try:
+            return self.response.json()
+        except Exception as e:
+            if type(self.response.content) == str:
+                return self.response.content
+            else:
+              # FIXME silently fail
+              return None
+    def pretty_json(self):
+        return json.dumps(self.as_json(), sort_keys=True, indent=2)
+
+class MicaResponseOld:
+    """
+    Response from Mica: code, headers and content
+    """
+
     def __init__(self, code, headers, content):
         self.code = code
         self.headers = headers
@@ -354,11 +603,17 @@ class UriBuilder:
         return self
 
     def params(self, params):
-        self.params = params
+        if isinstance(params, tuple):
+          self.params = dict((x, y) for x, y in params)
+        else:
+          self.params = params
+
         return self
 
     def query(self, key, value):
-        self.params.update([(key, value),])
+        param = {}
+        param[key] = value
+        self.params.update(param)
         return self
 
     def __str__(self):
