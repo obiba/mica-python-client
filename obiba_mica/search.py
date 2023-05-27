@@ -4,7 +4,6 @@ Mica search query.
 
 import json
 import sys
-import pycurl
 from obiba_mica.core import MicaClient, UriBuilder
 import csv
 from io import StringIO
@@ -34,9 +33,6 @@ class SearchService:
           return response.as_json()
       except Exception as e:
           print(e, file=sys.stderr)
-      except pycurl.error as error:
-          errno, errstr = error
-          print('An error occurred: ', errstr, file=sys.stderr)
 
       return None
 

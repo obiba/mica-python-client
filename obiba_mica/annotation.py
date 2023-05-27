@@ -3,7 +3,6 @@ Mica annotations management.
 """
 
 import sys
-import pycurl
 from obiba_mica.core import MicaClient, UriBuilder
 import csv
 
@@ -32,9 +31,6 @@ class AnnotationService:
         request = self.__make_request()
         response = request.get().resource(ws).send()
         success = True
-      except pycurl.error as error:
-        errno, errstr = error
-        print('An error occurred: ', errstr, file=sys.stderr)
       except Exception as e:
         print(e, file=sys.stderr)
 
