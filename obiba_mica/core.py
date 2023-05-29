@@ -27,13 +27,13 @@ class MicaClient:
     @classmethod
     def build(cls, loginInfo):
         return MicaClient.buildWithAuthentication(loginInfo.data['server'], loginInfo.data['user'],
-                                                  loginInfo.data['password'], loginInfo.data['otp'])
+                                                  loginInfo.data['password'], loginInfo.data['otp'], loginInfo.data['no_ssl_verify'])
 
     @classmethod
-    def buildWithAuthentication(cls, server, user, password, otp):
+    def buildWithAuthentication(cls, server, user, password, otp, no_ssl_verify: bool = False):
         client = cls(server)
         if client.base_url.startswith('https:'):
-            client.session.verify = False
+          client.session.verify = False if no_ssl_verify else True
 
         client.credentials(user, password, otp)
         return client
@@ -88,7 +88,7 @@ class MicaClient:
     class LoginInfo:
         """
         Class used to hold the login info
-        """        
+        """
         data = None
 
         @classmethod
@@ -100,6 +100,8 @@ class MicaClient:
             """
             data = {}
             argv = vars(args)
+
+            data['no_ssl_verify'] = argv.get('no_ssl_verify')
 
             if argv.get('mica'):
                 data['server'] = argv['mica']

@@ -3,6 +3,7 @@
 #
 import argparse
 import sys
+import getpass
 
 from obiba_mica.core import HTTPError
 from obiba_mica.rest import RestService
@@ -17,7 +18,7 @@ from obiba_mica.update_collected_dataset import CollectedDatasetService
 from obiba_mica.update_collected_datasets import CollectedDatasetsService
 
 def prompt_password():
-    return input('Enter password:')
+    return getpass.getpass(prompt='Enter password: ')
 
 def add_mica_arguments(parser):
     """
@@ -28,6 +29,7 @@ def add_mica_arguments(parser):
     parser.add_argument('--password', '-p', nargs="?", required=False, help='User password')
     parser.add_argument('--otp', '-ot', action='store_true', help='Whether a one-time password is to be provided (required when connecting with username/password AND two-factor authentication is enabled)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    parser.add_argument('--no-ssl-verify', '-nv', action='store_true', help='Do not verify SSL certificates for HTTPS.')
 
 
 def add_subcommand(subparsers, name, help, add_args_func, default_func):
