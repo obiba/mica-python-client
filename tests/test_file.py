@@ -33,6 +33,18 @@ class TestClass(unittest.TestCase):
     except Exception as e:
       assert False
 
+  def __test_fileDelete(self, path):
+    try:
+      response = self.service.delete(path)
+
+      if response.code == 204:
+        assert True
+      else:
+        assert False
+
+    except Exception as e:
+      assert False
+
   def test_2_fileUnderReviewStatus(self):
     self.__test_fileChangeStatus('/individual-study/dummy.csv', FileService.STATUS_UNDER_REVIEW)
 
@@ -67,7 +79,7 @@ class TestClass(unittest.TestCase):
     try:
       response = self.service.download('/individual-study/dummy.csv')
 
-      if response is None or 'col1' not in response.content:
+      if response is None or 'col1' not in response.content.decode('utf-8'):
         assert False
 
       assert True
@@ -78,13 +90,21 @@ class TestClass(unittest.TestCase):
     self.__test_fileChangeStatus('/individual-study/dummy.csv', FileService.STATUS_DELETED)
 
   def test_7_fileDelete(self):
-    try:
-      response = self.service.delete('/individual-study/dummy.csv')
+    self.__test_fileDelete('/individual-study/dummy.csv')
 
-      if response.code == 204:
-        assert True
+  def test_8_createFolder(self):
+    try:
+      response = self.service.create("/individual-study", "yoyo")
+
+      if response.code == 201:
+        self.__test_fileChangeStatus('/individual-study/yoyo', FileService.STATUS_DELETED)
+        self.__test_fileDelete('/individual-study/yoyo')
+
       else:
         assert False
 
     except Exception as e:
       assert False
+
+
+

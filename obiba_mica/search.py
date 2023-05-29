@@ -4,7 +4,6 @@ Mica search query.
 
 import json
 import sys
-import pycurl
 from obiba_mica.core import MicaClient, UriBuilder
 import csv
 from io import StringIO
@@ -34,9 +33,6 @@ class SearchService:
           return response.as_json()
       except Exception as e:
           print(e, file=sys.stderr)
-      except pycurl.error as error:
-          errno, errstr = error
-          print('An error occurred: ', errstr, file=sys.stderr)
 
       return None
 
@@ -353,16 +349,16 @@ class SearchService:
       '''
       Execute search command
       '''
-      client = MicaClient.build(MicaClient.LoginInfo.parse(args))
+      service = SearchService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
       if args.target == 'network':
-          self.search_networks(args, client)
+          service.search_networks(query=args.query, start=args.start, limit=args.limit, locale=args.locale, out=args.out)
       elif args.target == 'study':
-          self.search_studies(args, client)
+          self.search_studies(query=args.query, start=args.start, limit=args.limit, locale=args.locale, out=args.out)
       elif args.target == 'population':
-          self.search_study_populations(args, client)
+          self.search_study_populations(query=args.query, start=args.start, limit=args.limit, locale=args.locale, out=args.out)
       elif args.target == 'dce':
-          self.search_study_dces(args, client)
+          self.search_study_dces(query=args.query, start=args.start, limit=args.limit, locale=args.locale, out=args.out)
       elif args.target == 'dataset':
-          self.search_datasets(args, client)
+          self.search_datasets(query=args.query, start=args.start, limit=args.limit, locale=args.locale, out=args.out)
       elif args.target == 'variable':
-          self.search_variables(args, client)
+          service.search_variables(query=args.query, start=args.start, limit=args.limit, locale=args.locale, out=args.out)

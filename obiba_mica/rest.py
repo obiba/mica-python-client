@@ -59,6 +59,7 @@ class RestService:
     """
     # Build and send request
     client = MicaClient.build(MicaClient.LoginInfo.parse(args))
+
     try:
         request = client.new_request()
         request.fail_on_error()

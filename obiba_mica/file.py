@@ -9,15 +9,21 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import re
-
+import os
 
 class FileAction(argparse.Action):
+  """
+  Class used when parsing commandline args to stores the file action and destination
+  """
   def __call__(self, parser, namespace, values, option_string=None):
     setattr(namespace, '_file_cmd', self.dest)
     setattr(namespace, self.dest, values)
 
 
 class StoreTrueFileAction(FileAction):
+  """
+  Class used when parsing commandline args to set the nargs and const values
+  """
   def __init__(self, *args, **kwargs):
     kwargs.update(dict(nargs=0, const=True))
     super(StoreTrueFileAction, self).__init__(*args, **kwargs)
@@ -36,13 +42,22 @@ class MicaFile:
     self.path = path
 
   def get_dl_ws(self):
+    """
+    Returns the file download REST endpoint path
+    """
     return '/'.join(['/draft/file-dl', urllib.parse.quote(self.path.strip('/'))])
 
   def get_ws(self):
+    """
+    Returns the REST file endpoint path
+    """
     return '/'.join(['/draft/file', urllib.parse.quote(self.path.strip('/'))])
 
 
 class FileService(object):
+  """
+  Mica filesystem management service
+  """
 
   FILES_WS = '/draft/files'
   STATUS_DRAFT = 'DRAFT'
@@ -53,7 +68,10 @@ class FileService(object):
     self.client = client
     self.verbose = verbose
 
-  def _get_request(self):
+  def __make_request(self):
+    """
+    Builds a request object for a file operation
+    """
     request = self.client.new_request()
     request.fail_on_error().accept_json()
 
@@ -63,45 +81,64 @@ class FileService(object):
     return request
 
   def _validate_status(self, file, status):
+    """
+    Validates the input request, must match the actual file status
+    """
     state = self.get(file).as_json()
     if state['revisionStatus'] != status:
         raise Exception('Invalid file revision status. Found: %s, Required: %s' % (
             state['revisionStatus'], status))
 
   def get(self, file):
-    return self._get_request().get().resource(MicaFile(file).get_ws()).send()
+    """
+    Retrieves a file from Mica filesystem
 
-  def create(self, file, name):
-    self._validate_status(file, self.STATUS_DRAFT)
-    return self._get_request().post().resource(self.FILES_WS).content_type_json().content(
-        json.dumps(dict(id='', fileName='.', path='/'.join([MicaFile(file).path, name])))).send()
+    :param file - file path
+    """
+    return self.__make_request().get().resource(MicaFile(file).get_ws()).send()
+
+  def create(self, path, name):
+    """
+    Creates a folder
+
+    :param folder - folder path
+    :param name - folder name
+    """
+    self._validate_status(path, self.STATUS_DRAFT)
+    return self.__make_request().post().resource(self.FILES_WS).content_type_json().content(
+        json.dumps(dict(id='', fileName='.', path='/'.join([MicaFile(path).path, name])))).send()
 
   def copy(self, file, dest):
-    return self._get_request().put().resource('%s?copy=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
+    """
+    Copies a file to another destination in Mica filesystem 
+
+    :param file - source file
+    :param dest - destination folder
+    """
+    return self.__make_request().put().resource('%s?copy=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
   def move(self, file, dest):
     self._validate_status(file, self.STATUS_DRAFT)
-    return self._get_request().put().resource('%s?move=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
+    return self.__make_request().put().resource('%s?move=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
   def name(self, file, name):
     self._validate_status(file, self.STATUS_DRAFT)
-    return self._get_request().put().resource('%s?name=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(name, safe=''))).send()
+    return self.__make_request().put().resource('%s?name=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(name, safe=''))).send()
 
   def status(self, file, status):
-    return self._get_request().put().resource('%s?status=%s' % (MicaFile(file).get_ws(), status.upper())).send()
+    return self.__make_request().put().resource('%s?status=%s' % (MicaFile(file).get_ws(), status.upper())).send()
 
   def publish(self, file, published):
     if published:
         self._validate_status(file, self.STATUS_UNDER_REVIEW)
 
-    return self._get_request().put().resource('%s?publish=%s' % (MicaFile(file).get_ws(), str(published).lower())).send()
+    return self.__make_request().put().resource('%s?publish=%s' % (MicaFile(file).get_ws(), str(published).lower())).send()
 
   def unpublish(self, *args):
     return self.publish(False)
 
   def upload(self, file, upload):
-    response = self._get_request().content_upload(upload).accept('text/html')\
-        .content_type('multipart/form-data').post().resource('/files/temp').send()
+    response = self.__make_request().content_upload(upload).post().resource('/files/temp').send()
 
     location = None
     if 'Location' in response.headers:
@@ -110,20 +147,20 @@ class FileService(object):
         location = response.headers['location']
 
     job_resource = re.sub(r'http.*\/ws', r'', location)
-    temp_file = self._get_request().get().resource(job_resource).send().as_json()
+    temp_file = self.__make_request().get().resource(job_resource).send().as_json()
     fileName = temp_file.pop('name', '')
     temp_file.update(
-        dict(fileName=fileName, justUploaded=True, path=MicaFile(file).path))
+        dict(fileName=os.path.basename(fileName), justUploaded=True, path=MicaFile(file).path))
 
-    return self._get_request().post().resource(self.FILES_WS).content_type_json().content(
+    return self.__make_request().post().resource(self.FILES_WS).content_type_json().content(
         json.dumps(temp_file)).send()
 
   def download(self, file, *args):
-    return self._get_request().get().resource(MicaFile(file).get_dl_ws()).send()
+    return self.__make_request().get().resource(MicaFile(file).get_dl_ws()).send()
 
-  def delete(self, file, *args):
+  def   delete(self, file, *args):
     self._validate_status(file, self.STATUS_DELETED)
-    return self._get_request().delete().resource(MicaFile(file).get_ws()).send()
+    return self.__make_request().delete().resource(MicaFile(file).get_ws()).send()
 
   @staticmethod
   def add_arguments(parser):
@@ -173,4 +210,5 @@ class FileService(object):
     res = response.pretty_json() if args.json and not args.download and not args.upload else response.content
 
     # output to stdout
-    print(res)
+    if len(res) > 0:
+      print(res)

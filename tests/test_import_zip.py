@@ -7,12 +7,47 @@ class TestClass(unittest.TestCase):
 
   @classmethod
   def setup_class(cls):
-    cls.service = FileImportService(Utils.make_client())
+    cls.client = Utils.make_client()
 
-  def test_importZip(self):
+  def __test_changeResourceStatusToDelete(self, restService, resource):
     try:
-      response = self.service.import_zip('./tests/resources/dummy-test-study.zip', True)
+      response = restService.send_request('%s/_status?value=DELETED' % resource, restService.make_request('PUT'))
+
+      if response.code == 204:
+        assert True
+      else:
+        assert False
+
+    except Exception as e:
+      assert False
+
+  def __test_deleteResource(self, restService, resource):
+    try:
+      response = restService.send_request(resource, restService.make_request('DELETE'))
+
+      if response.code == 204:
+        assert True
+      else:
+        assert False
+
+    except Exception as e:
+      assert False
+
+  def test_1_importZip(self):
+    try:
+      service = FileImportService(self.client)
+      response = service.import_zip('./tests/resources/dummy-test-study.zip', True)
       assert response.code == 200
+    except Exception as e:
+      assert False
+
+  def test_2_deleteDummy(self):
+    try:
+      restService = RestService(self.client)
+      self.__test_changeResourceStatusToDelete(restService, '/draft/network/dummy-test-network')
+      self.__test_deleteResource(restService, '/draft/network/dummy-test-network')
+      self.__test_changeResourceStatusToDelete(restService, '/draft/individual-study/dummy-test-study')
+      self.__test_deleteResource(restService, '/draft/individual-study/dummy-test-study')
     except Exception as e:
       assert False
 
