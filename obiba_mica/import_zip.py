@@ -21,17 +21,12 @@ class FileImportService:
           request.verbose()
       return request
 
-  @classmethod
-  def add_arguments(cls, parser):
-      """
-      Add REST command specific options
-      """
-      parser.add_argument('path', help='Path to the zip file or directory that contains zip files to be imported')
-      parser.add_argument('--publish', '-pub', action='store_true', help='Publish imported study')
-
   def import_zip(self, path, publish: bool = None):
       """
       Import the Zip file content
+
+      :param path - local path to the zip file
+      :param publish - If True, after the upload publish the zip Mica documents (Network, Study, Dataset, files)
       """
       print("Importing " + path + "...")
 
@@ -46,12 +41,24 @@ class FileImportService:
         print(res)
 
   @classmethod
-  def do_command(cls, args):
-      service = FileImportService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
+  def add_arguments(cls, parser):
+      """
+      Add REST command specific options
 
+      :param parser - commandline args parser
+      """
+      parser.add_argument('path', help='Path to the zip file or directory that contains zip files to be imported')
+      parser.add_argument('--publish', '-pub', action='store_true', help='Publish imported study')
+
+  @classmethod
+  def do_command(cls, args):
       """
       Execute Import Zip command
+
+      :param args - commandline args
       """
+
+      service = FileImportService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
       if args.path.endswith('.zip'):
           cls.__printResponse(service.import_zip(args.path, args.publish))
       else:

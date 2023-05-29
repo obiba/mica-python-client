@@ -80,7 +80,7 @@ class FileService(object):
 
     return request
 
-  def _validate_status(self, file, status):
+  def __validate_status(self, file, status):
     """
     Validates the input request, must match the actual file status
     """
@@ -101,43 +101,78 @@ class FileService(object):
     """
     Creates a folder
 
-    :param folder - folder path
+    :param folder - Mica filesystem folder path
     :param name - folder name
     """
-    self._validate_status(path, self.STATUS_DRAFT)
+    self.__validate_status(path, self.STATUS_DRAFT)
     return self.__make_request().post().resource(self.FILES_WS).content_type_json().content(
         json.dumps(dict(id='', fileName='.', path='/'.join([MicaFile(path).path, name])))).send()
 
   def copy(self, file, dest):
     """
-    Copies a file to another destination in Mica filesystem 
+    Copies a file to another destination in Mica filesystem
 
-    :param file - source file
+    :param file - Mica filesystem file
     :param dest - destination folder
     """
     return self.__make_request().put().resource('%s?copy=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
   def move(self, file, dest):
-    self._validate_status(file, self.STATUS_DRAFT)
+    """
+    Moves a file to another destination in Mica filesystem
+
+    :param file - Mica filesystem file
+    :param dest - destination folder
+    """
+    self.__validate_status(file, self.STATUS_DRAFT)
     return self.__make_request().put().resource('%s?move=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(dest, safe=''))).send()
 
   def name(self, file, name):
-    self._validate_status(file, self.STATUS_DRAFT)
+    """
+    Renames a file
+
+    :param file - Mica filesystem file
+    :param name - new name
+    """
+    self.__validate_status(file, self.STATUS_DRAFT)
     return self.__make_request().put().resource('%s?name=%s' % (MicaFile(file).get_ws(), urllib.parse.quote_plus(name, safe=''))).send()
 
   def status(self, file, status):
+    """
+    Changes a file status (DRAFT, UNDER_REVIEW, DELETED)
+
+    :param file - Mica filesystem file
+    :param name - new name
+    """
     return self.__make_request().put().resource('%s?status=%s' % (MicaFile(file).get_ws(), status.upper())).send()
 
   def publish(self, file, published):
+    """
+    Publishes/ubpublishes a file
+
+    :param file - Mica filesystem file
+    :param published - If True, file gets published
+    """
     if published:
-        self._validate_status(file, self.STATUS_UNDER_REVIEW)
+        self.__validate_status(file, self.STATUS_UNDER_REVIEW)
 
     return self.__make_request().put().resource('%s?publish=%s' % (MicaFile(file).get_ws(), str(published).lower())).send()
 
   def unpublish(self, *args):
+    """
+    Unpublishes a file
+
+    :param file - Mica filesystem file
+    """
     return self.publish(False)
 
   def upload(self, file, upload):
+    """
+    Uploads a file to a destination Mica's file system
+
+    :param file - Mica filesystem destination path
+    :param upload - local file to upload
+    """
     response = self.__make_request().content_upload(upload).post().resource('/files/temp').send()
 
     location = None
@@ -159,13 +194,15 @@ class FileService(object):
     return self.__make_request().get().resource(MicaFile(file).get_dl_ws()).send()
 
   def   delete(self, file, *args):
-    self._validate_status(file, self.STATUS_DELETED)
+    self.__validate_status(file, self.STATUS_DELETED)
     return self.__make_request().delete().resource(MicaFile(file).get_ws()).send()
 
   @staticmethod
   def add_arguments(parser):
     """
     Add file command specific options
+
+    :param parser - commandline args parser
     """
     parser.add_argument('path', help='File path in Mica file system')
     parser.add_argument('--json', '-j', action='store_true',
@@ -196,6 +233,8 @@ class FileService(object):
   def do_command(args):
     """
     Execute file command
+
+    :param args - commandline args
     """
     service = FileService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
     response = None

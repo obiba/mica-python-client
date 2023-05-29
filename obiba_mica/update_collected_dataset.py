@@ -1,45 +1,47 @@
-"""
-Update an existing collected dataset, mainly for managing the linkage with opal.
-"""
-
 from obiba_mica.core import MicaClient
 import json
 
 class StudyTableBuilder:
 
-    def __init__(self, studyTable: None):
-        self.studyTable = studyTable if studyTable is not None else {}
+  def __init__(self, studyTable: None):
+      self.studyTable = studyTable if studyTable is not None else {}
 
-    def study(self, value):
-        self.studyTable['studyId'] = value
-        return self
+  def study(self, value):
+      self.studyTable['studyId'] = value
+      return self
 
-    def population(self, value):
-        self.studyTable['populationId'] = value
-        return self
+  def population(self, value):
+      self.studyTable['populationId'] = value
+      return self
 
-    def dce(self, value):
-        self.studyTable['dataCollectionEventId'] = value
-        return self
+  def dce(self, value):
+      self.studyTable['dataCollectionEventId'] = value
+      return self
 
-    def project(self, value):
-        self.studyTable['project'] = value
-        return self
+  def project(self, value):
+      self.studyTable['project'] = value
+      return self
 
-    def table(self, value):
-        self.studyTable['table'] = value
-        return self
+  def table(self, value):
+      self.studyTable['table'] = value
+      return self
 
-    def build(self):
-        return self.studyTable
+  def build(self):
+      return self.studyTable
 
 class CollectedDatasetService:
+  """
+  Update an existing collected dataset, mainly for managing the linkage with opal.
+  """
 
   def __init__(self, client: MicaClient, verbose: bool = False):
      self.client = client
      self.verbose = verbose
 
   def new_request(self):
+      """
+      Creates a MicaRequest instance
+      """
       request = self.client.new_request()
       request.fail_on_error()
       request.accept_json()
@@ -48,12 +50,28 @@ class CollectedDatasetService:
       return request
 
   def get_dataset(self, id):
+      """
+      Retrieves a colleted
+
+      :param id - dataset id
+      """
       path = '/draft/collected-dataset/' + id
       request = self.new_request()
       response = request.get().resource(path).send()
       return json.loads(response.content)
 
   def update_study_table(self, dataset, comment=[], study: str = None, population: str = None, dce: str = None, project: str = None, table: str = None):
+      """
+      Updates the collected datast's study table holding the information to associated Opal Project/Table
+
+      :param dataset - dataset document
+      :param comment - commit message
+      :param study - dataset's associated study ID
+      :param population - dataset's associated population ID
+      :param dce - dataset's associated data collection event ID
+      :param project - assiociated Opal project name
+      :param table - assiociated Opal table name
+      """
       dataset.pop('obiba.mica.EntityStateDto.datasetState', None)
       dataset.pop('variableType', None)
       dataset.pop('timestamps', None)
@@ -89,6 +107,12 @@ class CollectedDatasetService:
       dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'] = builder.build()
 
   def update_dataset(self, dataset, comment):
+      """
+      Sends the updated collected datast to Mica server
+
+      :param dataset - updated dataset document
+      :param comment - commit comment
+      """
       path = '/draft/collected-dataset/%s' % dataset['id']
       request = self.new_request()
       request.put().resource(path).query({'comment': ', '.join(comment) + ' (update-collected-dataset)'}).content_type_json()
@@ -99,6 +123,17 @@ class CollectedDatasetService:
       return request.send()
 
   def update(self, datasetId: str, study: str = None, population: str = None, dce: str = None, project: str = None, table: str = None):
+      """
+      Updates the collected datast's study table holding the information to associated Opal Project/Table
+
+      :param datasetId - dataset ID
+      :param comment - commit message
+      :param study - dataset's associated study ID
+      :param population - dataset's associated population ID
+      :param dce - dataset's associated data collection event ID
+      :param project - assiociated Opal project name
+      :param table - assiociated Opal table name
+      """
       if self.verbose:
           print("Updating %s ..." % datasetId)
 
@@ -114,15 +149,27 @@ class CollectedDatasetService:
     return request.method(method).resource(path + '/_publish').send()
 
   def publish(self, datasetId: str):
+    """
+    Publishs a collected dataset
+
+    :param datasetId - dataset document ID
+    """
     return self.__publish(datasetId, 'PUT')
 
   def unpublish(self, datasetId: str):
+    """
+    Unpublishes a collected dataset
+
+    :param datasetId - dataset document ID
+    """
     return self.__publish(datasetId, 'DELETE')
 
   @classmethod
   def add_arguments(cls, parser):
       """
       Add REST command specific options
+
+      :param parser commandline args parser
       """
       parser.add_argument('id', help='Collected dataset ID')
       parser.add_argument('--study', '-std', required=False, help='Mica study')
@@ -137,6 +184,8 @@ class CollectedDatasetService:
   def do_command(cls, args):
       """
       Execute dataset update command
+
+      :param args - commandline args
       """
       # Build and send request
       service = CollectedDatasetService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
