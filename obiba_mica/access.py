@@ -15,10 +15,69 @@ class AccessService:
      self.client = client
      self.verbose = verbose
 
+  def _get_resource_path(self, id: str):
+     """
+     Returns the Mica document (Network, Initiativem Study, etc) resource path
+
+     :param id - document id
+     """
+     pass
+
+  def __make_request(self):
+    request = self.client.new_request()
+    request.fail_on_error()
+    request.accept_json()
+    if self.verbose:
+        request.verbose()
+    return request
+
+  def add_access(self, id, type: str, subject: str, noFile: bool = True):
+    """
+    Adds access to a user or group
+
+    :param id - document id
+    :param subject - associated user/group
+    :param noFile - exclude access to document's files
+    """
+    uri = UriBuilder(self._get_resource_path(id)) \
+      .query('type', type.upper()) \
+      .query('principal', subject) \
+      .query('file', str(noFile).lower()) \
+      .build()
+
+    return self.__make_request().resource(uri).put().send()
+
+  def delete_access(self, id, type: str, subject: str):
+    """
+    Removes access from a user or group
+
+    :param id - document id
+    :param subject - associated user/group
+    """
+    uri = UriBuilder(self._get_resource_path(id)) \
+      .query('type', type.upper()) \
+      .query('principal', subject) \
+      .build()
+
+    return self.__make_request().resource(uri).delete().send()
+
+  def list_accesses(self, id):
+    """
+    Lists all associated accesses of a Mica document
+
+    :param id - document id
+    """
+    uri = UriBuilder(self._get_resource_path(id)).build()
+
+    return self.__make_request().resource(uri).get().send()
+
   @classmethod
   def add_permission_arguments(cls, parser, fileArg):
     """
     Add permission arguments
+
+    :param parser - commandline args parser
+    :param fileArg - If True, 'noFile' commandline arg is added
     """
     parser.add_argument('--add', '-a', action='store_true', help='Grant an access right')
     parser.add_argument('--delete', '-d', action='store_true', required=False, help='Delete an access right')
@@ -32,6 +91,8 @@ class AccessService:
   def validate_args(cls, args):
     """
     Validate action, permission and subject type
+
+    :param args - commandline args
     """
     if not args.add and not args.delete and not args.list:
       raise Exception("You must specify an access operation: [--add|-a] or [--delete|-de] or [--list|-ls]")
@@ -43,43 +104,12 @@ class AccessService:
       if not args.type or args.type.upper() not in AccessService.SUBJECT_TYPES:
         raise Exception("Valid subject types are: %s" % ', '.join(AccessService.SUBJECT_TYPES).lower())
 
-  def _get_resource_path(self, id: str):
-     pass
-
-  def __make_request(self):
-    request = self.client.new_request()
-    request.fail_on_error()
-    request.accept_json()
-    if self.verbose:
-        request.verbose()
-    return request
-
-  def add_access(self, id, type: str, subject: str, noFile: bool = True):
-    uri = UriBuilder(self._get_resource_path(id)) \
-      .query('type', type.upper()) \
-      .query('principal', subject) \
-      .query('file', str(noFile).lower()) \
-      .build()
-
-    return self.__make_request().resource(uri).put().send()
-
-  def delete_access(self, id, type: str, subject: str):
-    uri = UriBuilder(self._get_resource_path(id)) \
-      .query('type', type.upper()) \
-      .query('principal', subject) \
-      .build()
-
-    return self.__make_request().resource(uri).delete().send()
-
-  def list_accesses(self, id):
-    uri = UriBuilder(self._get_resource_path(id)).build()
-
-    return self.__make_request().resource(uri).get().send()
-
   @classmethod
   def do_command(cls, args):
     """
     Execute access command - also used for tests
+
+    :param args - commandline args
     """
     # Build and send requests
     cls.validate_args(args)

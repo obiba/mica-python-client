@@ -1,11 +1,10 @@
-"""
-Mica plugin management.
-"""
-
 import sys
 from obiba_mica.core import MicaClient, MicaRequest
 
 class PluginService:
+  """
+  Mica plugin management.
+  """
 
   def __init__(self, client, verbose: bool = False):
      self.client = client
@@ -19,10 +18,106 @@ class PluginService:
         request.verbose()
     return request
 
+  def updates(self):
+    """
+    Returns a list of plugin updates
+    """
+    return self.__make_request().resource('/config/plugins/_updates').get().send()
+
+  def available(self):
+    """
+    Returns a list of available plugins
+    """
+    return self.__make_request().resource('/config/plugins/_available').get().send()
+
+  def fetch(self, name: str):
+    """
+    Retrieves a plugin
+
+    :param name - plugin name
+    """
+    return self.__make_request().resource('/config/plugin/%s' % name).get().send()
+
+  def install(self, nameVersion: str):
+    """
+    Installs a plugin by name and version
+
+    :param nameVersion - name and versoin separated by a colon (name:version)
+    """
+
+    parts = nameVersion.split(':')
+    if len(parts) == 1:
+      url = '/config/plugins?name=%s' % parts[0]
+    else:
+      url = '/config/plugins?name=%s$%d' % (parts[0], parts[1])
+
+    return self.__make_request().resource(url).post().send()
+
+  def configure(self, configure: str):
+    """
+    Adds configuration properties to a plugin
+
+    Example:
+
+    :param configure - plugin name
+    """
+    request = self.__make_request().content_type_text_plain()
+    print('Enter plugin site properties (one property per line, Ctrl-D to end input):')
+    request.content(sys.stdin.read())
+    return request.put().resource('/config/plugin/%s/cfg' % configure).send()
+
+  def remove(self, nameVersion: str):
+    """
+    Removes a plugin by name and version
+
+    :param nameVersion - name and versoin separated by a colon (name:version)
+    """
+    return self.__make_request().resource('/config/plugin/%s' % nameVersion).delete().send()
+
+  def reinstate(self, name: str):
+    """
+    Reinstates/cancel a plugin uninstalation
+
+    :param name - plugin name
+    """
+    return self.__make_request().resource('/config/plugin/%s' % name).put().send()
+
+  def status(self, name: str):
+    """
+    Returns the status of the plugin
+
+    :param name - plugin name
+    """
+    return self.__make_request().resource('/config/plugin/%s/service' % name).get().send()
+
+  def start(self, name: str):
+    """
+    Starts a plugin
+
+    :param name - plugin name
+    """
+    return self.__make_request().resource('/config/plugin/%s/service' % name).put().send()
+
+  def stop(self, name: str):
+    """
+    Stops a plugin
+
+    :param name - plugin name
+    """
+    return self.__make_request().resource('/config/plugin/%s/service' % name).delete().send()
+
+  def list(self):
+    """
+    Lists the installed plugins
+    """
+    return self.__make_request().resource('/config/plugins').get().send()
+
   @classmethod
   def add_arguments(cls, parser):
       """
       Add plugin command specific options
+
+      :param parser - commandline args parser
       """
 
       parser.add_argument('--list', '-ls', action='store_true', help='List the installed plugins.')
@@ -43,53 +138,12 @@ class PluginService:
       parser.add_argument('--stop', '-so', required=False, help='Stop the service associated to the named plugin.')
       parser.add_argument('--json', '-j', action='store_true', help='Pretty JSON formatting of the response')
 
-
-  def updates(self):
-    return self.__make_request().resource('/config/plugins/_updates').get().send()
-
-  def available(self):
-    return self.__make_request().resource('/config/plugins/_available').get().send()
-
-  def fetch(self, name: str):
-    return self.__make_request().resource('/config/plugin/%s' % name).get().send()
-
-  def install(self, nameVersion: str):
-    parts = nameVersion.split(':')
-    if len(parts) == 1:
-      url = '/config/plugins?name=%s' % parts[0]
-    else:   
-      url = '/config/plugins?name=%s$%d' % (parts[0], parts[1])
-
-    return self.__make_request().resource(url).post().send()
-
-  def configure(self, configure: str):
-    request = self.__make_request().content_type_text_plain()
-    print('Enter plugin site properties (one property per line, Ctrl-D to end input):')
-    request.content(sys.stdin.read())
-    return request.put().resource('/config/plugin/%s/cfg' % configure).send()
-
-  def remove(self, nameVersion: str):
-    return self.__make_request().resource('/config/plugin/%s' % nameVersion).delete().send()
-
-  def reinstate(self, name: str):
-    return self.__make_request().resource('/config/plugin/%s' % name).put().send()
-
-  def status(self, name: str):
-    return self.__make_request().resource('/config/plugin/%s/service' % name).get().send()
-
-  def start(self, name: str):
-    return self.__make_request().resource('/config/plugin/%s/service' % name).put().send()
-
-  def stop(self, name: str):
-    return self.__make_request().resource('/config/plugin/%s/service' % name).delete().send()
-
-  def list(self):
-    return self.__make_request().resource('/config/plugins').get().send()
-
   @classmethod
   def do_command(cls, args):
       """
       Execute plugin command
+
+      :param args - commandline args
       """
       # Build and send request
       client = MicaClient.build(MicaClient.LoginInfo.parse(args))

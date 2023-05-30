@@ -7,6 +7,9 @@ from obiba_mica.core import MicaClient, UriBuilder
 import csv
 
 class AnnotationService:
+  """
+  Service exports annotations of variables of one or all collected datasets of a Mica server
+  """
 
   def __init__(self, client: MicaClient, verbose: bool = False):
      self.client = client
@@ -40,6 +43,11 @@ class AnnotationService:
     return response.as_json()
 
   def create_writer(self, outputFile: str = None):
+    """
+    Creates a CSV writer associated with an output file if provided, otherwise the output is sent to STDOUT
+
+    :param outputFile - csv output file
+    """
     file = sys.stdout
     if outputFile:
         file = open(outputFile, 'w')
@@ -48,17 +56,22 @@ class AnnotationService:
 
     return writer
 
-  def write_dataset_variable_annotations(self, dataset, writer):
+  def write_dataset_variable_annotations(self, datasetId, writer):
+    """
+    Writes annotations of all vatiables of one collected dataset
+
+    :param datasetId - collected dataset ID
+    :param writer - csv writer
+    """
+
     # send request to get total count
-
-
-    ws = UriBuilder(['collected-dataset', dataset, 'variables']).query('from', 0).query('limit', 0).build()
+    ws = UriBuilder(['collected-dataset', datasetId, 'variables']).query('from', 0).query('limit', 0).build()
     response = self.__send_request(ws)
     total = response['total'] if 'total' in response else 0
 
     f = 0
     while total > 0 and f < total:
-      ws = UriBuilder(['collected-dataset', dataset, 'variables']).query('from', f).query('limit', 1000).build()
+      ws = UriBuilder(['collected-dataset', datasetId, 'variables']).query('from', f).query('limit', 1000).build()
       response = self.__send_request(ws)
       f = f + 1000
       # format response
@@ -81,6 +94,11 @@ class AnnotationService:
                   })
 
   def write_datasets_variable_annotations(self, writer):
+    """
+    In case no dataset is provided, write the annotations of all variables of all collected datasets
+
+    :param writer - csv writer
+    """
     ws = UriBuilder(['collected-datasets']).query('from', 0).query('limit', 0).build()
     response = self.__send_request(ws)
     total = response['total'] if 'total' in response else 0
@@ -105,6 +123,8 @@ class AnnotationService:
   def add_arguments(cls, parser):
       """
       Add annotations command specific options
+
+      :param parser - commandline args parser
       """
       parser.add_argument('--out', '-o', required=False, help='Output file (default is stdout)')
       parser.add_argument('--dataset', '-d', required=False, help='Study dataset ID')
@@ -113,6 +133,8 @@ class AnnotationService:
   def do_command(cls, args):
     """
     Execute annotations command
+
+    :param args - commandline args
     """
     service  = AnnotationService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
     writer = service.create_writer(args.out)

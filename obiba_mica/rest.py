@@ -13,6 +13,13 @@ class RestService:
      self.verbose = verbose
 
   def make_request(self, method: str):
+    """
+    Creates a MicaRequest instance
+
+    Note: all responses are return in JSON form
+
+    :param method - HTTP method
+    """
     request = self.client.new_request()
     request.method(method)
     request.fail_on_error()
@@ -22,6 +29,13 @@ class RestService:
     return request
 
   def make_request_with_content_type(self, method: str, contentType: str, content: str = None):
+    """
+    Creates a MicaRequest instance with a request body
+
+    :param method - HTTP method
+    :param contentType - request content type
+    :param content - data to be posted (if ignored a prompt will read-in data from commandline ending with a CTRL-D)
+    """
     request = self.make_request(method)
     if contentType:
       request.content_type(contentType)
@@ -35,6 +49,9 @@ class RestService:
     return request
 
   def send_request(self, url: str, request: MicaRequest):
+    """
+    Sends the request to Mica server
+    """
     return request.resource(url).send()
 
 
@@ -42,6 +59,8 @@ class RestService:
   def add_arguments(cls, parser):
     """
     Add REST command specific options
+
+    :param parser - commandline args parser
     """
     parser.add_argument('ws', help='Web service path, for instance: /study/xxx')
     parser.add_argument('--method', '-m', required=False,
@@ -56,6 +75,8 @@ class RestService:
   def do_command(cls, args):
     """
     Execute REST command
+
+    :param args - commandline args
     """
     # Build and send request
     client = MicaClient.build(MicaClient.LoginInfo.parse(args))

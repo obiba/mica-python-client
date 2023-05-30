@@ -25,7 +25,10 @@ class SearchService:
 
   def send_search_request(self, ws, query):
       '''
-      Create a new request
+      Create a new search request
+
+      :param ws - REST endpoint (/variables/_rql)
+      :param query - RQL query
       '''
       try:
           request = self.__make_request()
@@ -103,6 +106,16 @@ class SearchService:
       return flat
 
   def search_networks(self, query='', start=0, limit=100, locale='en', out=None):
+      """
+      Searches all published networks matching the given query
+
+      :param query - RQL query
+      :param start - starting index from which to retrieve data
+      :param limit - length of data to be retrieved
+      :param locale - default is 'en'
+      :param out - output file, if ignored the result is send to STDOUT
+      """
+
       q = self.__append_rql(query, 'network', ['*'], ['id'], start, limit, locale)
       ws = UriBuilder(['networks', '_rql']).build()
       res = self.send_search_request(ws, q)
@@ -154,17 +167,44 @@ class SearchService:
               writer.writerow(row)
 
   def search_studies(self, query='', start=0, limit=100, locale='en', out=None):
+      """
+      Searches all published individual studies matching the given query
+
+      :param query - RQL query
+      :param start - starting index from which to retrieve data
+      :param limit - length of data to be retrieved
+      :param locale - default is 'en'
+      :param out - output file, if ignored the result is send to STDOUT
+      """
       typeQuery = self.__as_rql('study', [self.__as_rql('in', ['Mica_dataset.className', 'Study'])])
       theQuery = '%s,%s' % (typeQuery, query) if query is not None and len(query) > 0 else typeQuery
       self.__search_studies(theQuery, start, limit, locale, out)
 
   def search_initiatives(self, query='', start=0, limit=100, locale='en', out=None):
+      """
+      Searches all published initiatives matching the given query
+
+      :param query - RQL query
+      :param start - starting index from which to retrieve data
+      :param limit - length of data to be retrieved
+      :param locale - default is 'en'
+      :param out - output file, if ignored the result is send to STDOUT
+      """
       typeQuery = self.__as_rql('study', [self.__as_rql('in', ['Mica_dataset.className', 'HarmonizationStudy'])])
       theQuery = '%s,%s' % (typeQuery, query) if query is not None and len(query) > 0 else typeQuery
       self.__search_studies(theQuery, start, limit, locale, out)
 
 
   def search_study_populations(self, query='', start=0, limit=100, locale='en', out=None):
+      """
+      Searches the populations of a individual studies matching the given query
+
+      :param query - RQL query
+      :param start - starting index from which to retrieve data
+      :param limit - length of data to be retrieved
+      :param locale - default is 'en'
+      :param out - output file, if ignored the result is send to STDOUT
+      """
       q = self.__append_rql(query, 'study', ['populations.name', 'populations.description', 'populations.model'], ['id'], start, limit, locale)
       ws = UriBuilder(['studies', '_rql']).build()
       res = self.send_search_request(ws, q)
@@ -194,6 +234,15 @@ class SearchService:
                       writer.writerow(row)
 
   def search_study_dces(self, query='', start=0, limit=100, locale='en', out=None):
+      """
+      Searches all published data collection events of individual studies matching the given query
+
+      :param query - RQL query
+      :param start - starting index from which to retrieve data
+      :param limit - length of data to be retrieved
+      :param locale - default is 'en'
+      :param out - output file, if ignored the result is send to STDOUT
+      """
       q = self.__append_rql(query, 'study', ['populations.dataCollectionEvents'], ['id'], start, limit, locale)
       ws = UriBuilder(['studies', '_rql']).build()
       res = self.send_search_request(ws, q)
@@ -269,11 +318,29 @@ class SearchService:
               writer.writerow(row)
 
   def search_datasets(self, query='', start=0, limit=100, locale='en', out=None):
+      """
+      Searches all published collected datasets matching the given query
+
+      :param query - RQL query
+      :param start - starting index from which to retrieve data
+      :param limit - length of data to be retrieved
+      :param locale - default is 'en'
+      :param out - output file, if ignored the result is send to STDOUT
+      """
       typeQuery = self.__as_rql('dataset', [self.__as_rql('in', ['Mica_dataset.className', 'StudyDataset'])])
       theQuery = '%s,%s' % (typeQuery, query) if query is not None and len(query) > 0 else typeQuery
       self.__search_datasets(theQuery, start, limit, locale, out)
 
   def search_protocols(self, query='', start=0, limit=100, locale='en', out=None):
+      """
+      Searches all published harmonization protocols matching the given query
+
+      :param query - RQL query
+      :param start - starting index from which to retrieve data
+      :param limit - length of data to be retrieved
+      :param locale - default is 'en'
+      :param out - output file, if ignored the result is send to STDOUT
+      """
       typeQuery = self.__as_rql('dataset', [self.__as_rql('in', ['Mica_dataset.className', 'HarmonizationDataset'])])
       theQuery = '%s,%s' % (typeQuery, query) if query is not None and len(query) > 0 else typeQuery
       self.__search_datasets(theQuery, start, limit, locale, out)
@@ -335,6 +402,8 @@ class SearchService:
   def add_arguments(self, parser):
       '''
       Add tags command specific options
+
+      :param parser - commandline args parser
       '''
       parser.add_argument('--out', '-o', required=False, help='Output file (default is stdout).')
       parser.add_argument('--target', '-t', required=True, choices=['variable', 'dataset', 'study', 'population', 'dce', 'network'],
@@ -348,6 +417,8 @@ class SearchService:
   def do_command(self, args):
       '''
       Execute search command
+
+      :param args - commandline args
       '''
       service = SearchService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
       if args.target == 'network':

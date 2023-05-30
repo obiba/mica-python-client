@@ -1,13 +1,12 @@
-"""
-Update several existing collected dataset, mainly for managing the linkage with opal.
-"""
-
 from obiba_mica.core import MicaClient
 from obiba_mica.update_collected_dataset import CollectedDatasetService
 import json
 import re
 
 class CollectedDatasetsService:
+  """
+  Update several existing collected dataset, mainly for managing the linkage with opal.
+  """
 
   def __init__(self, client: MicaClient, verbose: bool = False):
      self.client = client
@@ -15,6 +14,9 @@ class CollectedDatasetsService:
      self.datasetService = CollectedDatasetService(client, verbose)
 
   def new_request(self):
+      """
+      Creates a MicaRequest instance
+      """
       request = self.client.new_request()
       request.fail_on_error()
       request.accept_json()
@@ -22,10 +24,19 @@ class CollectedDatasetsService:
           request.verbose()
       return request
 
-  def update(self, datasetId:str, project:str):
+  def update(self, datasetId: str, project: str):
+      """
+      Updates a collecetd dataset's Opal project name
+
+      :param datasetId - dataset document ID
+      :param project - Opal project name
+      """
       return self.datasetService.update(datasetId, project=project)
 
-  def publish(self, datasetId:str):
+  def publish(self, datasetId: str):
+      """
+      Publishes a collected dataset
+      """
       return self.datasetService.publish(datasetId)
 
   def unpublish(self, datasetId: str):
@@ -35,6 +46,11 @@ class CollectedDatasetsService:
       return self.datasetService.get_dataset(id)
 
   def get_datasets(self, pattern: str):
+      """
+      Retrieves all collected datasets of a Mica server matching the regular expression pattern
+
+      :param pattern - regular expression pattern
+      """
       path = '/draft/collected-datasets'
       request = self.new_request()
       response = request.get().resource(path).send()
@@ -46,6 +62,8 @@ class CollectedDatasetsService:
   def add_arguments(cls, parser):
       """
       Add REST command specific options
+
+      :param parser - commandline args parser
       """
       parser.add_argument('id', help='Regular expression to filter the collected dataset IDs')
       parser.add_argument('--project', '-prj', required=False, help='Opal project')
@@ -57,6 +75,8 @@ class CollectedDatasetsService:
   def do_command(cls, args):
       """
       Execute datasets update command
+
+      :param args - commandline args
       """
       # Build and send request
       datasetsService = CollectedDatasetsService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
@@ -68,7 +88,7 @@ class CollectedDatasetsService:
               print(id)
           else:
               if args.project:
-                  datasetsService.update(id,args.project)
+                  datasetsService.update(id, args.project)
               if args.publish:
                   if args.verbose:
                     print("Publishing " + id + "...")

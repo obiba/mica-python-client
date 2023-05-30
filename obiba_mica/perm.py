@@ -5,6 +5,10 @@ Mica permissions
 from obiba_mica.core import UriBuilder, MicaClient
 
 class PermissionService:
+  """
+  Base class for Mica document permission management
+  """
+
   SUBJECT_TYPES = ('USER', 'GROUP')
   PERMISSIONS = ('READER', 'EDITOR', 'REVIEWER')
 
@@ -24,6 +28,13 @@ class PermissionService:
     return request
 
   def add_permission(self, id, type: str, subject: str, permission: str):
+    """
+    Adds a user/group permission to a Mica document
+
+    :param id - document id
+    :param subject - associated user/group
+    :param permission - 'READER', 'EDITOR', 'REVIEWER'
+    """
     uri = UriBuilder(self._get_resource_path(id)) \
       .query('type', type.upper()) \
       .query('role', self.map_permission(permission)) \
@@ -33,6 +44,12 @@ class PermissionService:
     return self.__make_request().resource(uri).put().send()
 
   def delete_permission(self, id, type: str, subject: str):
+    """
+    Removes a user/group permission from a Mica document
+
+    :param id - document id
+    :param subject - associated user/group
+    """
     uri = UriBuilder(self._get_resource_path(id)) \
       .query('type', type.upper()) \
       .query('principal', subject) \
@@ -41,8 +58,12 @@ class PermissionService:
     return self.__make_request().resource(uri).delete().send()
 
   def list_permissions(self, id):
-    uri = UriBuilder(self._get_resource_path(id)) \
-      .build()
+    """
+    Lists all persmissions given to a Mica document
+
+    :param id - document id
+    """
+    uri = UriBuilder(self._get_resource_path(id)).build()
 
     return self.__make_request().resource(uri).get().send()
 
@@ -50,6 +71,8 @@ class PermissionService:
   def add_permission_arguments(cls, parser):
     """
     Add permission arguments
+
+    :param parser - commandline args parser
     """
     parser.add_argument('--add', '-a', action='store_true', help='Add a permission')
     parser.add_argument('--delete', '-d', action='store_true', required=False, help='Delete a permission')
@@ -62,6 +85,8 @@ class PermissionService:
   def map_permission(cls, permission):
     """
     Map permission argument to permission query parameter
+
+    :param permission - permission name as a string
     """
     if permission.upper() not in PermissionService.PERMISSIONS:
       return None
@@ -72,6 +97,8 @@ class PermissionService:
   def validate_args(cls, args):
     """
     Validate action, permission and subject type
+
+    :param args - commandline args
     """
     if not args.add and not args.delete and not args.list:
       raise Exception("You must specify a permission operation: [--add|-a] or [--delete|-de]")
@@ -93,6 +120,8 @@ class PermissionService:
   def do_command(cls, args):
     """
     Execute permission command
+
+    :param args - commandline args
     """
     # Build and send requests
     cls.validate_args(args)

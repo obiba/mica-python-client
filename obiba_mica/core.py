@@ -14,7 +14,7 @@ import logging
 
 class MicaClient:
     """
-    Mica Client
+    Mica Client is a front-end to Mica server responsible for establishing a session connection and creating HTTP requests.
     """
 
     def __init__(self, server=None):
@@ -26,11 +26,25 @@ class MicaClient:
 
     @classmethod
     def build(cls, loginInfo):
+        """
+        Creates a client instance
+
+        :param loginInfo - login related information
+        """
         return MicaClient.buildWithAuthentication(loginInfo.data['server'], loginInfo.data['user'],
                                                   loginInfo.data['password'], loginInfo.data['otp'], loginInfo.data['no_ssl_verify'])
 
     @classmethod
     def buildWithAuthentication(cls, server, user, password, otp, no_ssl_verify: bool = False):
+        """
+        Creates a client instance
+
+        :param server - Mica server address
+        :param user - username
+        :param password - user password
+        :param otp - if one-time-password is True, a prompt read the secret code
+        :param no_ssl_verify - if True, the SSL certificate is not verified (not recommended)
+        """
         client = cls(server)
         if client.base_url.startswith('https:'):
           client.session.verify = False if no_ssl_verify else True
@@ -39,6 +53,13 @@ class MicaClient:
         return client
 
     def credentials(self, user, password, otp):
+        """
+        Creates the authorization header and attempts to input the required login info
+
+        :param user - username
+        :param password - user password
+        :param otp - one-time-password, if True, the SSL certificate is not verified (not recommended)
+        """
         u = self.__ensure_entry('User name', user)
         p = self.__ensure_entry('Password', password, True)
         if otp:
@@ -66,6 +87,12 @@ class MicaClient:
         return self
 
     def header(self, key, value):
+        """
+        Adds a header to session headers used by the request
+
+        :param key - header key
+        :param value - header value
+        """
         header = {}
         header[key] = value
 
@@ -73,11 +100,14 @@ class MicaClient:
         return self
 
     def new_request(self):
+        """
+        Creates a new instance of MicaRequest
+        """
         return MicaRequest(self)
 
     def close(self):
         """
-        Close client session and request to close Mica server session
+        Closes client session and request to close Mica server session
         """
         try:
             self.new_request().resource('/auth/session/_current').delete().send()
@@ -120,7 +150,7 @@ class MicaClient:
 
 class MicaRequest:
     """
-    Mica request.
+    Class used to send request to a Mica server
     """
 
     def __init__(self, mica_client):
@@ -140,12 +170,15 @@ class MicaRequest:
 
         :param value - connection/read timout
         """
-        if 'timeout' in self.options:
-            self.options['timeout'] = (value, self.options['timeout'])
         self.options['timeout'] = value
         return self
 
     def verbose(self):
+        """
+        Enables the verbose mode
+
+        Note: Requests library logging requires a log-level DEBUG
+        """
         logging.basicConfig(level=logging.DEBUG)
         self._verbose = True
         return self
@@ -155,6 +188,12 @@ class MicaRequest:
         return self
 
     def header(self, key, value):
+        """
+        Adds a header to session headers used by the request
+
+        :param key - header key
+        :param value - header value
+        """
         if value:
             header = {}
             header[key] = value
@@ -182,6 +221,11 @@ class MicaRequest:
         return self.content_type('application/x-www-form-urlencoded')
 
     def content_upload(self, filename):
+        """
+        Sets the file associate with the upload
+
+        Note: Requests library takes care of mutlti-part setting in the header
+        """
         if self._verbose:
             logging.info('* File Content:')
             logging.info('[file=' + filename + ', size=' + str(os.path.getsize(filename)) + ']')
@@ -189,6 +233,11 @@ class MicaRequest:
         return self
 
     def method(self, method):
+        """
+        Sets a HTTP method
+
+        :param method - any of ['GET', 'DELETE', 'PUT', 'POST', 'OPTIONS']
+        """
         if not method:
             self.method = 'GET'
         elif method in ['GET', 'DELETE', 'PUT', 'POST', 'OPTIONS']:
@@ -219,6 +268,8 @@ class MicaRequest:
     def query(self, parameters):
       """
       Stores the query parameters
+
+      :param parametes - query params
       """
       if isinstance(parameters, tuple):
         param = {}
@@ -241,6 +292,8 @@ class MicaRequest:
     def content(self, content):
         """
         Stores the request body
+
+        :param content - request body
         """
         if self._verbose:
             print('* Content:')
@@ -259,7 +312,7 @@ class MicaRequest:
         for option in self.options:
             setattr(request, option, self.options[option])
 
-        # headers
+        # Combine the client and the request headers
         request.headers = {}
         request.headers.update(self.client.session.headers)
         request.headers.update(self.headers)
@@ -297,7 +350,7 @@ class MicaRequest:
 
 class MicaResponse:
     """
-    Response from Mica: code, headers and content
+    Wrapper class arouns HTTP response from Mica
     """
 
     def __init__(self, response):
@@ -316,6 +369,9 @@ class MicaResponse:
         return self.response.content
 
     def as_json(self):
+        """
+        Returns response body as a JSON document
+        """
         if self.response is None or self.response.content is None:
             return None
 
@@ -327,7 +383,11 @@ class MicaResponse:
             else:
               # FIXME silently fail
               return None
+
     def pretty_json(self):
+        """
+        Beatifies the JSON response
+        """
         return json.dumps(self.as_json(), sort_keys=True, indent=2)
 
 
@@ -349,6 +409,11 @@ class UriBuilder:
         return self
 
     def params(self, params):
+        """
+        Sets the URL query parameters
+
+        :param params - query parameters
+        """
         if isinstance(params, tuple):
           self.params = dict((x, y) for x, y in params)
         else:
@@ -357,6 +422,12 @@ class UriBuilder:
         return self
 
     def query(self, key, value):
+        """
+        Adds one URL query param
+
+        :param key - query param key
+        :param value - query param value
+        """
         param = {}
         param[key] = value
         self.params.update(param)
@@ -382,20 +453,11 @@ class UriBuilder:
     def build(self):
         return self.__str__()
 
-class MicaService:
-  def __init__(self, client: MicaClient,  verbose: bool = False):
-    self.client = client
-    self.verbose = verbose
-
-  def _make_request(self, fail_safe: bool = False) -> MicaRequest:
-    request = self.client.new_request()
-    if not fail_safe:
-        request.fail_on_error()
-    if self.verbose:
-        request.verbose(self.verbose)
-    return request
 
 class HTTPError(Exception):
+  """
+  HTTP related error class
+  """
   def __init__(self, response: MicaResponse, message: str = None):
       # Call the base class constructor with the parameters it needs
       super().__init__(message if message else 'HTTP Error: %s' % response.code)
@@ -412,17 +474,3 @@ class HTTPError(Exception):
 
   def is_server_error(self) -> bool:
       return self.code >= 500
-
-class Formatter:
-
-    @classmethod
-    def to_json(self, data: any, pretty: bool = False):
-        if pretty:
-            return json.dumps(data, sort_keys=True, indent=2)
-        else:
-            return json.dumps(data, sort_keys=True)
-
-    @classmethod
-    def print_json(self, data: any, pretty: bool = False):
-        if data is not None:
-            print(self.to_json(data, pretty))

@@ -12,15 +12,15 @@ class TestClass(unittest.TestCase):
 
   def test_addSearchPlugin(self):
     try:
-      self.service.install('mica-search-es')
-      assert True
+      response = self.service.install('mica-search-es')
+      assert response.code == 200
     except Exception as e:
       assert False
 
   def test_removeSearchPlugin(self):
     try:
-      self.service.remove('mica-search-es')
-      assert True
+      response = self.service.remove('mica-search-es')
+      assert response.code == 204
     except Exception as e:
       assert False
 
@@ -34,7 +34,6 @@ class TestClass(unittest.TestCase):
   def test_listPlugins(self):
     try:
       response = self.service.list()
-      print(response)
-      assert True
+      assert response.code == 200
     except Exception as e:
       assert False
