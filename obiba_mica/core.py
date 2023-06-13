@@ -10,7 +10,7 @@ from http import HTTPStatus
 import urllib.request, urllib.parse, urllib.error
 from functools import reduce
 from requests import Session, Request, Response
-import logging
+from http.client import HTTPConnection
 
 class MicaClient:
     """
@@ -176,10 +176,8 @@ class MicaRequest:
     def verbose(self):
         """
         Enables the verbose mode
-
-        Note: Requests library logging requires a log-level DEBUG
         """
-        logging.basicConfig(level=logging.DEBUG)
+        HTTPConnection.debuglevel = 1
         self._verbose = True
         return self
 
@@ -227,8 +225,8 @@ class MicaRequest:
         Note: Requests library takes care of mutlti-part setting in the header
         """
         if self._verbose:
-            logging.info('* File Content:')
-            logging.info('[file=' + filename + ', size=' + str(os.path.getsize(filename)) + ']')
+            print('* File Content:')
+            print('[file=' + filename + ', size=' + str(os.path.getsize(filename)) + ']')
         self.files = {'file': (filename, open(filename, 'rb'))}
         return self
 
