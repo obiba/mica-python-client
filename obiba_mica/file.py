@@ -166,13 +166,7 @@ class FileService(object):
     """
     return self.publish(False)
 
-  def upload(self, file, upload):
-    """
-    Uploads a file to a destination Mica's file system
-
-    :param file - Mica filesystem destination path
-    :param upload - local file to upload
-    """
+  def uploadTempFile(self, upload):
     response = self.__make_request().content_upload(upload).post().resource('/files/temp').send()
 
     location = None
@@ -182,7 +176,17 @@ class FileService(object):
         location = response.headers['location']
 
     job_resource = re.sub(r'http.*\/ws', r'', location)
-    temp_file = self.__make_request().get().resource(job_resource).send().as_json()
+    return self.__make_request().get().resource(job_resource).send().as_json()
+
+
+  def upload(self, file, upload):
+    """
+    Uploads a file to a destination Mica's file system
+
+    :param file - Mica filesystem destination path
+    :param upload - local file to upload
+    """
+    temp_file = self.uploadTempFile(upload)
     fileName = temp_file.pop('name', '')
     temp_file.update(
         dict(fileName=os.path.basename(fileName), justUploaded=True, path=MicaFile(file).path))
