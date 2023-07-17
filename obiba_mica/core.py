@@ -9,7 +9,8 @@ import getpass
 from http import HTTPStatus
 import urllib.request, urllib.parse, urllib.error
 from functools import reduce
-from requests import Session, Request, Response
+from requests import Session, Request
+import urllib3
 from http.client import HTTPConnection
 
 class MicaClient:
@@ -47,7 +48,9 @@ class MicaClient:
         """
         client = cls(server)
         if client.base_url.startswith('https:'):
-          client.session.verify = False if no_ssl_verify else True
+          client.session.verify = not no_ssl_verify
+          if no_ssl_verify:
+              urllib3.disable_warnings()
 
         client.credentials(user, password, otp)
         return client
