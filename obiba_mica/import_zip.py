@@ -26,7 +26,7 @@ class FileImportService:
       Import the Zip file content
 
       :param path - local path to the zip file
-      :param publish - If True, after the upload publish the zip Mica documents (Network, Study, Dataset, files)
+      :param publish - If True, after the upload, publish the zipped Mica documents (Network, Study, Dataset, files)
       """
       print("Importing " + path + "...")
 
