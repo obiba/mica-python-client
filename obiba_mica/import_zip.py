@@ -28,7 +28,7 @@ class FileImportService:
       :param path - local path to the zip file
       :param publish - If True, after the upload, publish the zipped Mica documents (Network, Study, Dataset, files)
       """
-      print("Importing " + path + "...")
+      print("Importing {} ({}) ...".format(path, publish))
 
       query = "publish=%s" % str(publish).lower() if publish is not None and publish else ''
       return self.__make_request().content_upload(path).resource('/draft/studies/_import?%s' % query).send()
@@ -58,10 +58,11 @@ class FileImportService:
       :param args - commandline args
       """
 
+      print("ARGS {} {}".format(args.path, args.publish))
       service = FileImportService(MicaClient.build(MicaClient.LoginInfo.parse(args)), args.verbose)
       if args.path.endswith('.zip'):
           cls.__printResponse(service.import_zip(args.path, args.publish))
       else:
           for export_file in os.listdir(args.path):
               if export_file.endswith('.zip'):
-                  cls.__printResponse(service.import_zip(args.path + '/' + export_file))
+                  cls.__printResponse(service.import_zip(os.path.join(args.path, export_file), args.publish))
