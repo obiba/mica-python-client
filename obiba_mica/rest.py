@@ -41,10 +41,10 @@ class RestService:
       request.content_type(contentType)
 
       if content is not None:
-          request.content(content)
+          request.content(content.encode('utf-8'))
       else:
         print('Enter content:')
-        request.content(sys.stdin.read())
+        request.content(str(sys.stdin.read()).encode('utf-8'))
 
     return request
 
@@ -93,7 +93,7 @@ class RestService:
         if args.content_type:
             request.content_type(args.content_type)
             print('Enter content:')
-            request.content(sys.stdin.read())
+            request.content(str(sys.stdin.read()).encode('utf-8'))
 
         if args.verbose:
             request.verbose()
