@@ -139,7 +139,7 @@ class PermissionService:
 
       # format response
       if response.code != 204:
-          print(response.content)
+          print(response.as_json())
 
     except Exception as e:
       print(Exception, e)

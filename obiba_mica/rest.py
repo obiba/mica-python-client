@@ -103,7 +103,7 @@ class RestService:
         response = request.send()
 
         # format response
-        res = response.content
+        res = response.as_json()
         if args.json:
             res = response.pretty_json()
         elif args.method in ['OPTIONS']:
