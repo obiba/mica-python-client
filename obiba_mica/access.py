@@ -125,7 +125,7 @@ class AccessService:
         response = service.list_accesses(args.id)
 
       if response.code != 204:
-          print(response.content)
+          print(response.as_json())
 
     except Exception as e:
         print(Exception, e)
