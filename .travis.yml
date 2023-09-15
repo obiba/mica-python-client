@@ -5,7 +5,7 @@ python:
 matrix:
   include:
   - python: 3.7
-    dist: xenial
+    dist: bionic
 addons:
   apt:
     packages:
@@ -16,7 +16,7 @@ before_install:
 install:
 - poetry install -v
 script:
-- poetry build
+- poetry run pytest
 before_deploy:
 - poetry config http-basic.pypi $PYPI_USER $PYPI_PASSWORD
 - poetry build
