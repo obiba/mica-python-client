@@ -16,7 +16,7 @@ class TestClass(unittest.TestCase):
       response = self.service.update(datasetId, project)
       if response.code == 204:
         dataset = self.service.get_dataset(datasetId)
-        studyTable = dataset['obiba.mica.CollectedDatasetDto.type']['studyTable']
+        studyTable = dataset['collected']['studyTable']
 
         if studyTable['project'] == project:
           assert True
