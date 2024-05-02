@@ -13,7 +13,7 @@ class TestClass(unittest.TestCase):
       response = self.service.update('cls-wave1', project='dummy')
       if response.code == 204:
         dataset = self.service.get_dataset('cls-wave1')
-        studyTable = dataset['obiba.mica.CollectedDatasetDto.type']['studyTable']
+        studyTable = dataset['collected']['studyTable']
 
         if studyTable['project'] == 'dummy':
           assert True
@@ -30,7 +30,7 @@ class TestClass(unittest.TestCase):
       response = self.service.update('cls-wave1', table='dummy')
       if response.code == 204:
         dataset = self.service.get_dataset('cls-wave1')
-        studyTable = dataset['obiba.mica.CollectedDatasetDto.type']['studyTable']
+        studyTable = dataset['collected']['studyTable']
 
         if studyTable['table'] == 'dummy':
           assert True
@@ -47,7 +47,7 @@ class TestClass(unittest.TestCase):
       response = self.service.update('cls-wave1', project='CLS', table='Wave1')
       if response.code == 204:
         dataset = self.service.get_dataset('cls-wave1')
-        studyTable = dataset['obiba.mica.CollectedDatasetDto.type']['studyTable']
+        studyTable = dataset['collected']['studyTable']
 
         if studyTable['project'] == 'CLS' and studyTable['table'] == 'Wave1':
           assert True

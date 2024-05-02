@@ -62,29 +62,29 @@ class CollectedDatasetService:
 
   def update_study_table(self, dataset, comment=[], study: str = None, population: str = None, dce: str = None, project: str = None, table: str = None):
       """
-      Updates the collected datast's study table holding the information to associated Opal Project/Table
+      Updates the collected dataset's study table holding the information to associated Opal Project/Table
 
       :param dataset - dataset document
       :param comment - commit message
       :param study - dataset's associated study ID
       :param population - dataset's associated population ID
       :param dce - dataset's associated data collection event ID
-      :param project - assiociated Opal project name
-      :param table - assiociated Opal table name
+      :param project - associated Opal project name
+      :param table - associated Opal table name
       """
-      dataset.pop('obiba.mica.EntityStateDto.datasetState', None)
+      dataset.pop('state', None)
       dataset.pop('variableType', None)
       dataset.pop('timestamps', None)
       dataset.pop('published', None)
       dataset.pop('permissions', None)
 
-      if 'obiba.mica.CollectedDatasetDto.type' not in dataset:
+      if 'collected' not in dataset:
           if not study or not population or not dce or not project or not table:
               raise ValueError("Study table is missing and cannot be created.")
-          dataset['obiba.mica.CollectedDatasetDto.type'] = {'studyTable': {}}
-      dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'].pop('studySummary', None)
+          dataset['collected'] = {'studyTable': {}}
+      dataset['collected']['studyTable'].pop('studySummary', None)
 
-      builder = StudyTableBuilder(dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'])
+      builder = StudyTableBuilder(dataset['collected']['studyTable'])
 
       # update
       comment = []
@@ -104,11 +104,11 @@ class CollectedDatasetService:
           comment.append('Table: ' + table)
           builder.table(table)
 
-      dataset['obiba.mica.CollectedDatasetDto.type']['studyTable'] = builder.build()
+      dataset['collected']['studyTable'] = builder.build()
 
   def update_dataset(self, dataset, comment):
       """
-      Sends the updated collected datast to Mica server
+      Sends the updated collected dataset to Mica server
 
       :param dataset - updated dataset document
       :param comment - commit comment
@@ -124,15 +124,15 @@ class CollectedDatasetService:
 
   def update(self, datasetId: str, study: str = None, population: str = None, dce: str = None, project: str = None, table: str = None):
       """
-      Updates the collected datast's study table holding the information to associated Opal Project/Table
+      Updates the collected dataset's study table holding the information to associated Opal Project/Table
 
       :param datasetId - dataset ID
       :param comment - commit message
       :param study - dataset's associated study ID
       :param population - dataset's associated population ID
       :param dce - dataset's associated data collection event ID
-      :param project - assiociated Opal project name
-      :param table - assiociated Opal table name
+      :param project - associated Opal project name
+      :param table - associated Opal table name
       """
       if self.verbose:
           print("Updating %s ..." % datasetId)
