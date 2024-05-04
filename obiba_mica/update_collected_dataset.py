@@ -1,5 +1,6 @@
 from obiba_mica.core import MicaClient
 import json
+from obiba_mica.legacy import MicaLegacySupport
 
 class StudyTableBuilder:
 
@@ -72,19 +73,21 @@ class CollectedDatasetService:
       :param project - associated Opal project name
       :param table - associated Opal table name
       """
-      dataset.pop('state', None)
+      MicaLegacySupport.removeDatasetEntityState(dataset)
       dataset.pop('variableType', None)
       dataset.pop('timestamps', None)
       dataset.pop('published', None)
       dataset.pop('permissions', None)
 
-      if 'collected' not in dataset:
+      collectedDataset = MicaLegacySupport.getCollectedDataset(dataset)
+
+      if collectedDataset is None:
           if not study or not population or not dce or not project or not table:
               raise ValueError("Study table is missing and cannot be created.")
-          dataset['collected'] = {'studyTable': {}}
-      dataset['collected']['studyTable'].pop('studySummary', None)
+          collectedDataset = {'studyTable': {}}
+      collectedDataset['studyTable'].pop('studySummary', None)
 
-      builder = StudyTableBuilder(dataset['collected']['studyTable'])
+      builder = StudyTableBuilder(collectedDataset['studyTable'])
 
       # update
       comment = []
@@ -104,7 +107,7 @@ class CollectedDatasetService:
           comment.append('Table: ' + table)
           builder.table(table)
 
-      dataset['collected']['studyTable'] = builder.build()
+      collectedDataset['studyTable'] = builder.build()
 
   def update_dataset(self, dataset, comment):
       """
