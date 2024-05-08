@@ -37,6 +37,10 @@ class MicaLegacySupport:
         return []
 
     @staticmethod
+    def isCollectedDataset(dataset):
+        return dataset["variableType"] == "Collected"
+
+    @staticmethod
     def getVariableSearchResults(dto):
         """
         Get variable search results
