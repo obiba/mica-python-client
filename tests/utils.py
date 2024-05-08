@@ -4,7 +4,7 @@ from obiba_mica import MicaClient
 
 class Utils:
   SERVER = 'https://mica-demo.obiba.org'
-#   SERVER = 'http://localhost:8082'
+  # SERVER = 'http://localhost:8082'
   USER = 'administrator'
   PASSWORD = 'password'
   DEFAULT_PARAMS = {"accept": False, "content_type": False, "verbose": False, "method": 'GET'}

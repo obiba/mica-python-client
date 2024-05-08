@@ -36,12 +36,31 @@ class TestClass(unittest.TestCase):
   def test_1_importZip(self):
     try:
       service = FileImportService(self.client)
-      response = service.import_zip('./tests/resources/dummy-test-study.zip', True)
+      response = service.import_zip('./tests/resources/dummy-test-study.zip', True, False)
       assert response.code == 200
     except Exception as e:
       assert False
 
   def test_2_deleteDummy(self):
+    try:
+      restService = RestService(self.client)
+      self.__test_changeResourceStatusToDelete(restService, '/draft/network/dummy-test-network')
+      self.__test_deleteResource(restService, '/draft/network/dummy-test-network')
+      self.__test_changeResourceStatusToDelete(restService, '/draft/individual-study/dummy-test-study')
+      self.__test_deleteResource(restService, '/draft/individual-study/dummy-test-study')
+    except Exception as e:
+      assert False
+
+
+  def test_3_importZip(self):
+    try:
+      service = FileImportService(self.client)
+      response = service.import_zip('./tests/resources/dummy-test-study-legacy.zip', True, True)
+      assert response.code == 200
+    except Exception as e:
+      assert False
+
+  def test_4_deleteDummy(self):
     try:
       restService = RestService(self.client)
       self.__test_changeResourceStatusToDelete(restService, '/draft/network/dummy-test-network')
