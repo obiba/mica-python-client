@@ -3,6 +3,7 @@ Import data exported from old mica as zip files.
 """
 
 from obiba_mica.core import MicaClient
+from obiba_mica.rest import RestService
 import os.path
 import os
 import tempfile
@@ -17,6 +18,7 @@ class FileImportService:
     def __init__(self, client: MicaClient, verbose: bool = False):
         self.client = client
         self.verbose = verbose
+        self.needsLegacySupport = FileImportService.needsLegacySupport(client, verbose)
 
     def __make_request(self):
         request = self.client.new_request()
@@ -40,6 +42,18 @@ class FileImportService:
         else:
             dataset["protocol"] = dataset["obiba.mica.HarmonizedDatasetDto.type"]
             dataset.pop("obiba.mica.HarmonizedDatasetDto.type", None)
+
+    @staticmethod
+    def needsLegacySupport(client, verbose=False):
+        restService = RestService(client, verbose)
+        response = restService.send_request("/auth/session/_current", restService.make_request("GET"))
+        # Only the Mica server supporting Java 21 has version information in the response
+        versionInfo =  response.version_info
+
+        if versionInfo is not None:
+            return int(versionInfo["major"]) + int(versionInfo["minor"]) < 10
+        else:
+            return True
 
     def __upgradeZip(self, path):
         """
@@ -87,7 +101,8 @@ class FileImportService:
         query = "publish=%s" % str(publish).lower() if publish is not None and publish else ""
         request = self.__make_request()
 
-        if legacy:
+        if not self.needsLegacySupport and legacy:
+            # zip file is legacy format
             upgradedZip = self.__upgradeZip(path)
             request.content_upload(upgradedZip)
             # remove file
