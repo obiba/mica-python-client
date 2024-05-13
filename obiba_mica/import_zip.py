@@ -51,7 +51,8 @@ class FileImportService:
         versionInfo =  response.version_info
 
         if versionInfo is not None:
-            return int(versionInfo["major"]) + int(versionInfo["minor"]) < 10
+            # Versions prior to 5.5.x need legacy support
+            return int(versionInfo["major"]) <= 5 and int(versionInfo["minor"]) < 5
         else:
             return True
 
