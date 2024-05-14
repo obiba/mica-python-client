@@ -2,12 +2,7 @@ language: python
 python:
 - '3.7'
 - '3.9'
-matrix:
-  include:
-  - python: 3.7
-    dist: bionic
-  - python: 3.9
-    dist: bionic
+dist: bionic
 addons:
   apt:
     packages:

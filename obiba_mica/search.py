@@ -7,6 +7,7 @@ import sys
 from obiba_mica.core import MicaClient, UriBuilder
 import csv
 from io import StringIO
+from obiba_mica.legacy import MicaLegacySupport
 
 class SearchService:
 
@@ -119,16 +120,17 @@ class SearchService:
       q = self.__append_rql(query, 'network', ['*'], ['id'], start, limit, locale)
       ws = UriBuilder(['networks', '_rql']).build()
       res = self.send_search_request(ws, q)
-      if 'networkResultDto' in res and 'networkResult' in res['networkResultDto'] and res['networkResultDto']['totalHits'] > 0:
+      networks = MicaLegacySupport.getNetworkSearchResults(res)
+      if len(networks) > 0:
           headers = ['id', 'name', 'acronym', 'description', 'studyIds']
-          for item in res['networkResultDto']['networkResult']['networks']:
+          for item in networks:
               if 'content' in item:
                   item['flat'] = self.__flatten(json.loads(item['content']), locale)
                   for key in list(item['flat'].keys()):
                       if key not in headers:
                           headers.append(key)
           writer = self.__new_writer(out, headers)
-          for item in res['networkResultDto']['networkResult']['networks']:
+          for item in networks:
               row = {
                   'id': item['id'],
                   'name': self.__extract_label(item['name'], locale),
@@ -145,16 +147,17 @@ class SearchService:
       q = self.__append_rql(query, 'study', ['acronym', 'name', 'objectives', 'model'], ['id'], start, limit, locale)
       ws = UriBuilder(['studies', '_rql']).build()
       res = self.send_search_request(ws, q)
-      if 'studyResultDto' in res and 'studyResult' in res['studyResultDto'] and res['studyResultDto']['totalHits'] > 0:
+      summaries = MicaLegacySupport.getStudySearchResults(res)
+      if len(summaries) > 0:
           headers = ['id', 'name', 'acronym', 'objectives']
-          for item in res['studyResultDto']['studyResult']['summaries']:
+          for item in summaries:
               if 'content' in item:
                   item['flat'] = self.__flatten(json.loads(item['content']), locale)
                   for key in list(item['flat'].keys()):
                       if key not in headers:
                           headers.append(key)
           writer = self.__new_writer(out, headers)
-          for item in res['studyResultDto']['studyResult']['summaries']:
+          for item in summaries:
               row = {
                   'id': item['id'],
                   'name': self.__extract_label(item['name'], locale),
@@ -208,9 +211,10 @@ class SearchService:
       q = self.__append_rql(query, 'study', ['populations.name', 'populations.description', 'populations.model'], ['id'], start, limit, locale)
       ws = UriBuilder(['studies', '_rql']).build()
       res = self.send_search_request(ws, q)
-      if 'studyResultDto' in res and 'studyResult' in res['studyResultDto']:
+      summaries = MicaLegacySupport.getStudySearchResults(res)
+      if len(summaries) > 0:
           headers = ['id', 'name', 'description', 'studyId']
-          for item in res['studyResultDto']['studyResult']['summaries']:
+          for item in summaries:
               if 'populationSummaries' in item:
                   for pop in item['populationSummaries']:
                       if 'content' in pop:
@@ -219,7 +223,7 @@ class SearchService:
                               if key not in headers:
                                   headers.append(key)
           writer = self.__new_writer(out, headers)
-          for item in res['studyResultDto']['studyResult']['summaries']:
+          for item in summaries:
               if 'populationSummaries' in item:
                   for pop in item['populationSummaries']:
                       row = {
@@ -246,9 +250,10 @@ class SearchService:
       q = self.__append_rql(query, 'study', ['populations.dataCollectionEvents'], ['id'], start, limit, locale)
       ws = UriBuilder(['studies', '_rql']).build()
       res = self.send_search_request(ws, q)
-      if 'studyResultDto' in res and 'studyResult' in res['studyResultDto']:
+      summaries = MicaLegacySupport.getStudySearchResults(res)
+      if len(summaries) > 0:
           headers = ['id', 'name', 'description', 'studyId', 'populationId', 'start', 'end']
-          for item in res['studyResultDto']['studyResult']['summaries']:
+          for item in summaries:
               if 'populationSummaries' in item:
                   for pop in item['populationSummaries']:
                       if 'dataCollectionEventSummaries' in pop:
@@ -259,7 +264,7 @@ class SearchService:
                                       if key not in headers:
                                           headers.append(key)
           writer = self.__new_writer(out, headers)
-          for item in res['studyResultDto']['studyResult']['summaries']:
+          for item in summaries:
               if 'populationSummaries' in item:
                   for pop in item['populationSummaries']:
                       if 'dataCollectionEventSummaries' in pop:
@@ -282,40 +287,35 @@ class SearchService:
       q = self.__append_rql(query, 'dataset', ['*'], ['id'], start, limit, locale)
       ws = UriBuilder(['datasets', '_rql']).build()
       res = self.send_search_request(ws, q)
-      if 'datasetResultDto' in res and 'datasetResult' in res['datasetResultDto']:
+      datasets = MicaLegacySupport.getDatasetSearchResults(res)
+      if len(datasets) > 0:
           headers = ['id', 'name', 'acronym', 'description', 'variableType', 'entityType', 'studyId', 'populationId', 'dceId']
-          for item in res['datasetResultDto']['datasetResult']['datasets']:
+          for item in datasets:
               if 'content' in item:
                   item['flat'] = self.__flatten(json.loads(item['content']), locale)
                   for key in list(item['flat'].keys()):
                       if key not in headers:
                           headers.append(key)
           writer = self.__new_writer(out, headers)
-          for item in res['datasetResultDto']['datasetResult']['datasets']:
-              study_id = ''
-              population_id = ''
-              dce_id = ''
-              if 'collected' in item:
-                  study_id = item['collected']['studyTable']['studyId']
-                  population_id = study_id + ':' + item['collected']['studyTable']['populationId']
-                  dce_id = item['collected']['studyTable']['dceId']
-              if 'protocol' in item:
-                  study_id = item['protocol']['harmonizationTable']['studyId']
-              row = {
-                  'id': item['id'],
-                  'name': self.__extract_label(item['name'], locale),
-                  'acronym': self.__extract_label(item['acronym'], locale),
-                  'description': self.__extract_label(item['description'], locale) if 'description' in item else '',
-                  'variableType': item['variableType'],
-                  'entityType': item['entityType'],
-                  'studyId': study_id,
-                  'populationId': population_id,
-                  'dceId': dce_id
-              }
-              if 'flat' in item:
-                  for key in item['flat']:
-                      row[key] = item['flat'][key]
-              writer.writerow(row)
+          for item in datasets:
+            info = {}
+            MicaLegacySupport.getDatasetStudyTableInfo(item, info)
+
+            row = {
+                'id': item['id'],
+                'name': self.__extract_label(item['name'], locale),
+                'acronym': self.__extract_label(item['acronym'], locale),
+                'description': self.__extract_label(item['description'], locale) if 'description' in item else '',
+                'variableType': item['variableType'],
+                'entityType': item['entityType'],
+                'studyId': info['study_id'],
+                'populationId': info['population_id'],
+                'dceId': info['dce_id']
+            }
+            if 'flat' in item:
+                for key in item['flat']:
+                    row[key] = item['flat'][key]
+            writer.writerow(row)
 
   def search_datasets(self, query='', start=0, limit=100, locale='en', out=None):
       """
@@ -349,6 +349,7 @@ class SearchService:
       q = self.__append_rql(query, 'variable', ['*'], ['id'], start, limit, locale)
       ws = UriBuilder(['variables', '_rql']).build()
       res = self.send_search_request(ws, q)
+      summaries = MicaLegacySupport.getVariableSearchResults(res)
 
       def category_label(category):
           if 'attributes' in category:
@@ -357,18 +358,18 @@ class SearchService:
           else:
               return ''
 
-      if 'variableResultDto' in res and 'variableResult' in res['variableResultDto']:
+      if len(summaries) > 0:
           headers = ['id', 'name', 'label', 'description', 'valueType', 'nature', 'categories', 'categories.missing', 'categories.label',
                     'datasetId', 'studyId', 'populationId', 'dceId',
                     'variableType', 'mimeType', 'unit', 'referencedEntityType', 'repeatable', 'occurrenceGroup']
-          for item in res['variableResultDto']['variableResult']['summaries']:
+          for item in summaries:
               if 'annotations' in item:
                   for annot in item['annotations']:
                       key = annot['taxonomy'] + '.' + annot['vocabulary']
                       if key not in headers:
                           headers.append(key)
           writer = self.__new_writer(out, headers)
-          for item in res['variableResultDto']['variableResult']['summaries']:
+          for item in summaries:
               row = {
                   'id': item['id'],
                   'name': item['name'],

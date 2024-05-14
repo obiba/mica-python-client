@@ -1,5 +1,6 @@
 import unittest
 from obiba_mica.update_collected_datasets import CollectedDatasetsService
+from obiba_mica.legacy import MicaLegacySupport
 from tests.utils import Utils
 
 class TestClass(unittest.TestCase):
@@ -16,7 +17,8 @@ class TestClass(unittest.TestCase):
       response = self.service.update(datasetId, project)
       if response.code == 204:
         dataset = self.service.get_dataset(datasetId)
-        studyTable = dataset['collected']['studyTable']
+        collectedDataset = MicaLegacySupport.getCollectedDataset(dataset)
+        studyTable = collectedDataset['studyTable']
 
         if studyTable['project'] == project:
           assert True
