@@ -76,12 +76,9 @@ class TestClass(unittest.TestCase):
 
   def test_5_publish(self):
     try:
-      response = self.service.publish('cls-wave1')
-      if response.code == 204:
-        assert True
-      else:
-        assert False
-
+        response = self.service.publish('cls-wave1')
+        assert response.code == 204, f"Publish failed: {response.content}"
     except Exception as e:
-      assert False
+        assert False, f"Exception during publish: {e}"
+
 

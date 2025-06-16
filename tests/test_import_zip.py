@@ -26,14 +26,9 @@ class TestClass(unittest.TestCase):
     def __test_deleteResource(self, restService, resource):
         try:
             response = restService.send_request(resource, restService.make_request("DELETE"))
-
-            if response.code == 204:
-                assert True
-            else:
-                assert False
-
+            assert response.code == 204, f"Failed to delete resource {resource}: {response.content}"
         except Exception as e:
-            assert False
+            assert False, f"Exception while deleting resource {resource}: {e}"
 
     def test_1_importZip(self):
         try:
