@@ -74,9 +74,9 @@ class FileImportService:
                         if len(res) > 0:
                             isStudy = res[0] == "study"
 
-                            with open(file_path, mode="r") as f:
+                            with open(file_path, mode="r", encoding="utf-8") as f:
                                 # Read the content of the file
-                                content = json.loads(f.read(), encoding="utf-8")
+                                content = json.loads(f.read())
                                 if isStudy:
                                     self.__upgradeStudy(content)
                                 else:
