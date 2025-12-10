@@ -1,6 +1,8 @@
 import unittest
+import time
 from obiba_mica.update_collected_datasets import CollectedDatasetsService
 from obiba_mica.legacy import MicaLegacySupport
+from obiba_mica.core import HTTPError
 from tests.utils import Utils
 
 class TestClass(unittest.TestCase):
@@ -31,26 +33,40 @@ class TestClass(unittest.TestCase):
       assert False
 
   def __unpublish(self, dataset):
-    try:
-      response = self.service.unpublish(dataset['id'])
-      if response.code == 204:
-        assert True
-      else:
-        assert False
-
-    except Exception as e:
-      assert False
+    tries = 3
+    for attempt in range(tries):
+      try:
+        response = self.service.unpublish(dataset['id'])
+        if response.code == 204:
+          return
+        else:
+          assert False, f"Unexpected response code while unpublishing {dataset['id']}: {response.code}"
+      except HTTPError as e:
+        # Retry on server errors (5xx)
+        if e.is_server_error() and attempt < tries - 1:
+          time.sleep(2 ** attempt)
+          continue
+        assert False, f"HTTPError while unpublishing {dataset['id']}: {e}"
+      except Exception as e:
+        assert False, f"Exception while unpublishing {dataset['id']}: {e}"
 
   def __publish(self, dataset):
-    try:
-      response = self.service.publish(dataset['id'])
-      if response.code == 204:
-        assert True
-      else:
-        assert False
-
-    except Exception as e:
-      assert False
+    tries = 3
+    for attempt in range(tries):
+      try:
+        response = self.service.publish(dataset['id'])
+        if response.code == 204:
+          return
+        else:
+          assert False, f"Unexpected response code while publishing {dataset['id']}: {response.code}"
+      except HTTPError as e:
+        # Retry on server errors (5xx)
+        if e.is_server_error() and attempt < tries - 1:
+          time.sleep(2 ** attempt)
+          continue
+        assert False, f"HTTPError while publishing {dataset['id']}: {e}"
+      except Exception as e:
+        assert False, f"Exception while publishing {dataset['id']}: {e}"
 
 
   def test_1_getDatasets(self):
