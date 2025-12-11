@@ -1,5 +1,4 @@
 import unittest
-import time
 from obiba_mica.update_collected_datasets import CollectedDatasetsService
 from obiba_mica.legacy import MicaLegacySupport
 from obiba_mica.core import HTTPError
@@ -33,40 +32,42 @@ class TestClass(unittest.TestCase):
       assert False
 
   def __unpublish(self, dataset):
-    tries = 3
-    for attempt in range(tries):
+    def try_unpublish():
       try:
         response = self.service.unpublish(dataset['id'])
         if response.code == 204:
-          return
+          return True
         else:
+          # Unexpected response code, fail immediately
           assert False, f"Unexpected response code while unpublishing {dataset['id']}: {response.code}"
       except HTTPError as e:
-        # Retry on server errors (5xx)
-        if e.is_server_error() and attempt < tries - 1:
-          time.sleep(2 ** attempt)
-          continue
+        # Retry on server errors (5xx), fail immediately on client errors (4xx)
+        if e.is_server_error():
+          return False
         assert False, f"HTTPError while unpublishing {dataset['id']}: {e}"
-      except Exception as e:
-        assert False, f"Exception while unpublishing {dataset['id']}: {e}"
+
+    # Retry with exponential backoff: 1s, 2s, 4s (max 3 effective tries within ~7s)
+    success = Utils.wait_for_condition(try_unpublish, timeout=7, interval=1, backoff='exponential')
+    assert success, f"Failed to unpublish {dataset['id']} after retries"
 
   def __publish(self, dataset):
-    tries = 3
-    for attempt in range(tries):
+    def try_publish():
       try:
         response = self.service.publish(dataset['id'])
         if response.code == 204:
-          return
+          return True
         else:
+          # Unexpected response code, fail immediately
           assert False, f"Unexpected response code while publishing {dataset['id']}: {response.code}"
       except HTTPError as e:
-        # Retry on server errors (5xx)
-        if e.is_server_error() and attempt < tries - 1:
-          time.sleep(2 ** attempt)
-          continue
+        # Retry on server errors (5xx), fail immediately on client errors (4xx)
+        if e.is_server_error():
+          return False
         assert False, f"HTTPError while publishing {dataset['id']}: {e}"
-      except Exception as e:
-        assert False, f"Exception while publishing {dataset['id']}: {e}"
+
+    # Retry with exponential backoff: 1s, 2s, 4s (max 3 effective tries within ~7s)
+    success = Utils.wait_for_condition(try_publish, timeout=7, interval=1, backoff='exponential')
+    assert success, f"Failed to publish {dataset['id']} after retries"
 
 
   def test_1_getDatasets(self):

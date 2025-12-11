@@ -14,6 +14,10 @@ class TestClass(unittest.TestCase):
       response = self.service.upload('/individual-study',  './tests/resources/dummy.csv')
 
       if response.code == 201:
+        # Wait for file to be indexed/available after upload
+        Utils.wait_for_condition(
+          lambda: self.service.get('/individual-study/dummy.csv') is not None
+        )
         assert True
       else:
         assert False
@@ -53,6 +57,10 @@ class TestClass(unittest.TestCase):
       response = self.service.publish('/individual-study/dummy.csv', True)
 
       if response.code == 204:
+        # Wait for publish to complete/propagate
+        Utils.wait_for_condition(
+          lambda: self.service.get('/individual-study/dummy.csv') is not None
+        )
         assert True
       else:
         assert False

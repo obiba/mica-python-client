@@ -13,14 +13,14 @@ class TestClass(unittest.TestCase):
     try:
       response = self.service.update('cls-wave1', project='dummy')
       if response.code == 204:
-        dataset = self.service.get_dataset('cls-wave1')
-        collectedDataset = MicaLegacySupport.getCollectedDataset(dataset)
-        studyTable = collectedDataset['studyTable']
+        # Wait for update to propagate before verifying
+        def check_update():
+          dataset = self.service.get_dataset('cls-wave1')
+          collectedDataset = MicaLegacySupport.getCollectedDataset(dataset)
+          studyTable = collectedDataset['studyTable']
+          return studyTable.get('project') == 'dummy'
 
-        if studyTable['project'] == 'dummy':
-          assert True
-        else:
-          assert False
+        assert Utils.wait_for_condition(check_update, timeout=5), "Update did not propagate"
       else:
         assert False
 
@@ -31,14 +31,14 @@ class TestClass(unittest.TestCase):
     try:
       response = self.service.update('cls-wave1', table='dummy')
       if response.code == 204:
-        dataset = self.service.get_dataset('cls-wave1')
-        collectedDataset = MicaLegacySupport.getCollectedDataset(dataset)
-        studyTable = collectedDataset['studyTable']
+        # Wait for update to propagate before verifying
+        def check_update():
+          dataset = self.service.get_dataset('cls-wave1')
+          collectedDataset = MicaLegacySupport.getCollectedDataset(dataset)
+          studyTable = collectedDataset['studyTable']
+          return studyTable.get('table') == 'dummy'
 
-        if studyTable['table'] == 'dummy':
-          assert True
-        else:
-          assert False
+        assert Utils.wait_for_condition(check_update, timeout=5), "Update did not propagate"
       else:
         assert False
 
@@ -49,14 +49,14 @@ class TestClass(unittest.TestCase):
     try:
       response = self.service.update('cls-wave1', project='CLS', table='Wave1')
       if response.code == 204:
-        dataset = self.service.get_dataset('cls-wave1')
-        collectedDataset = MicaLegacySupport.getCollectedDataset(dataset)
-        studyTable = collectedDataset['studyTable']
+        # Wait for update to propagate before verifying
+        def check_update():
+          dataset = self.service.get_dataset('cls-wave1')
+          collectedDataset = MicaLegacySupport.getCollectedDataset(dataset)
+          studyTable = collectedDataset['studyTable']
+          return studyTable.get('project') == 'CLS' and studyTable.get('table') == 'Wave1'
 
-        if studyTable['project'] == 'CLS' and studyTable['table'] == 'Wave1':
-          assert True
-        else:
-          assert False
+        assert Utils.wait_for_condition(check_update, timeout=5), "Update did not propagate"
       else:
         assert False
 

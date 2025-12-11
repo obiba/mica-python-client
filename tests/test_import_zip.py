@@ -37,6 +37,17 @@ class TestClass(unittest.TestCase):
                 service = FileImportService(self.client)
                 response = service.import_zip("./tests/resources/dummy-test-study.zip", True)
                 assert response.code == 200
+
+                # Wait for resources to be indexed/available after import
+                restService = RestService(self.client)
+                Utils.wait_for_condition(
+                    lambda: restService.send_request("/draft/individual-study/dummy-test-study",
+                                                     restService.make_request("GET")).code == 200
+                )
+                Utils.wait_for_condition(
+                    lambda: restService.send_request("/draft/network/dummy-test-network",
+                                                     restService.make_request("GET")).code == 200
+                )
             else:
                 assert True
         except Exception as e:
@@ -60,6 +71,17 @@ class TestClass(unittest.TestCase):
             service = FileImportService(self.client)
             response = service.import_zip("./tests/resources/dummy-test-study-legacy.zip", True, True)
             assert response.code == 200
+
+            # Wait for resources to be indexed/available after import
+            restService = RestService(self.client)
+            Utils.wait_for_condition(
+                lambda: restService.send_request("/draft/individual-study/dummy-test-study",
+                                                 restService.make_request("GET")).code == 200
+            )
+            Utils.wait_for_condition(
+                lambda: restService.send_request("/draft/network/dummy-test-network",
+                                                 restService.make_request("GET")).code == 200
+            )
         except Exception as e:
             assert False
 
