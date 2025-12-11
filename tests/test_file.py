@@ -27,16 +27,22 @@ class TestClass(unittest.TestCase):
       assert False
 
   def __test_fileChangeStatus(self, file, status):
-    try:
-      response = self.service.status(file, status)
+    from obiba_mica.core import HTTPError
 
-      if response.code == 204:
-        assert True
-      else:
-        assert False
+    def try_status_change():
+      try:
+        response = self.service.status(file, status)
+        return response.code == 204
+      except HTTPError as e:
+        # Retry on 404 (file not indexed yet) or 5xx (server errors)
+        if e.code == 404 or e.is_server_error():
+          return False
+        raise
 
-    except Exception as e:
-      assert False
+    # Retry with exponential backoff - longer timeout in CI
+    timeout = Utils.get_timeout(7)  # 7s local, 21s in CI
+    success = Utils.wait_for_condition(try_status_change, timeout=timeout, interval=1, backoff='exponential')
+    assert success, f"Failed to change status to {status} for {file}"
 
   def __test_fileDelete(self, path):
     try:
