@@ -16,7 +16,8 @@ class TestClass(unittest.TestCase):
       if response.code == 201:
         # Wait for file to be indexed/available after upload
         Utils.wait_for_condition(
-          lambda: self.service.get('/individual-study/dummy.csv') is not None
+          lambda: self.service.get('/individual-study/dummy.csv') is not None,
+          timeout=Utils.get_timeout(10)
         )
         assert True
       else:
@@ -59,7 +60,8 @@ class TestClass(unittest.TestCase):
       if response.code == 204:
         # Wait for publish to complete/propagate
         Utils.wait_for_condition(
-          lambda: self.service.get('/individual-study/dummy.csv') is not None
+          lambda: self.service.get('/individual-study/dummy.csv') is not None,
+          timeout=Utils.get_timeout(10)
         )
         assert True
       else:
