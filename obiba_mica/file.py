@@ -4,12 +4,13 @@ Mica file management.
 
 import argparse
 import json
-from obiba_mica.core import MicaClient
+from obiba_mica.core import MicaClient, HTTPError
 import urllib.request
 import urllib.parse
 import urllib.error
 import re
 import os
+import time
 
 class FileAction(argparse.Action):
   """
@@ -83,11 +84,25 @@ class FileService(object):
   def __validate_status(self, file, status):
     """
     Validates the input request, must match the actual file status
+    Retries on 404 errors with exponential backoff to handle eventual consistency
     """
-    state = self.get(file).as_json()
-    if state['revisionStatus'] != status:
-        raise Exception('Invalid file revision status. Found: %s, Required: %s' % (
-            state['revisionStatus'], status))
+    max_retries = 7
+    retry_delay = 1
+
+    for attempt in range(max_retries):
+      try:
+        state = self.get(file).as_json()
+        if state['revisionStatus'] != status:
+          raise Exception('Invalid file revision status. Found: %s, Required: %s' % (
+              state['revisionStatus'], status))
+        return  # Success
+      except HTTPError as e:
+        if e.code == 404 and attempt < max_retries - 1:
+          # File not available yet (eventual consistency), retry with exponential backoff
+          time.sleep(retry_delay)
+          retry_delay *= 2
+        else:
+          raise  # Re-raise if not 404 or out of retries
 
   def get(self, file):
     """

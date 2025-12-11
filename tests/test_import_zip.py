@@ -19,8 +19,8 @@ class TestClass(unittest.TestCase):
                 response = restService.send_request("%s/_status?value=DELETED" % resource, restService.make_request("PUT"))
                 return response.code == 204
             except HTTPError as e:
-                # Retry on server errors (5xx) - resource might not be ready yet
-                if e.is_server_error():
+                # Retry on 404 (resource not indexed yet) or 5xx (server errors)
+                if e.code == 404 or e.is_server_error():
                     return False
                 raise
 
