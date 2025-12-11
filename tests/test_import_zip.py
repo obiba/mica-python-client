@@ -50,11 +50,13 @@ class TestClass(unittest.TestCase):
                 restService = RestService(self.client)
                 Utils.wait_for_condition(
                     lambda: restService.send_request("/draft/individual-study/dummy-test-study",
-                                                     restService.make_request("GET")).code == 200
+                                                     restService.make_request("GET")).code == 200,
+                    timeout=Utils.get_timeout(10)
                 )
                 Utils.wait_for_condition(
                     lambda: restService.send_request("/draft/network/dummy-test-network",
-                                                     restService.make_request("GET")).code == 200
+                                                     restService.make_request("GET")).code == 200,
+                    timeout=Utils.get_timeout(10)
                 )
             else:
                 assert True
@@ -84,11 +86,13 @@ class TestClass(unittest.TestCase):
             restService = RestService(self.client)
             Utils.wait_for_condition(
                 lambda: restService.send_request("/draft/individual-study/dummy-test-study",
-                                                 restService.make_request("GET")).code == 200
+                                                 restService.make_request("GET")).code == 200,
+                timeout=Utils.get_timeout(10)
             )
             Utils.wait_for_condition(
                 lambda: restService.send_request("/draft/network/dummy-test-network",
-                                                 restService.make_request("GET")).code == 200
+                                                 restService.make_request("GET")).code == 200,
+                timeout=Utils.get_timeout(10)
             )
         except Exception as e:
             assert False
