@@ -103,7 +103,10 @@ class RestService:
         response = request.send()
 
         # format response
-        if args.accept and 'json' not in args.accept.lower():
+        if args.method in ['OPTIONS']:
+            # OPTIONS method - extract Allow header
+            print(response.headers['Allow'])
+        elif 'json' not in response.headers.get('Content-Type', 'application/json').lower():
             # Binary or non-JSON response - output raw content
             if response.content:
                 sys.stdout.buffer.write(response.content)
@@ -112,10 +115,6 @@ class RestService:
             res = response.as_json()
             if args.json:
                 res = response.pretty_json()
-            elif args.method in ['OPTIONS']:
-                res = response.headers['Allow']
-
-            # output to stdout
             print(res)
     finally:
         client.close()

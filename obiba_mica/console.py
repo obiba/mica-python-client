@@ -113,7 +113,10 @@ def run():
 
             args.func(args)
         except HTTPError as e:
-            print(e.error['status'] if e.error is not None else e)
+            if e.error is not None:
+                print(e.error.get('status', e.error))
+            else:
+                print(e)
             sys.exit(2)
     else:
       print('Mica command line tool.')
