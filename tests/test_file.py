@@ -8,6 +8,33 @@ class TestClass(unittest.TestCase):
   @classmethod
   def setup_class(cls):
     cls.service = FileService(Utils.make_client())
+    # Clean up any leftover file from previous test runs
+    cls._cleanup_test_file()
+
+  @classmethod
+  def teardown_class(cls):
+    # Clean up after all tests complete
+    cls._cleanup_test_file()
+
+  @classmethod
+  def _cleanup_test_file(cls):
+    """Clean up test file to ensure test isolation"""
+    from obiba_mica.core import HTTPError
+    try:
+      existing = cls.service.get('/individual-study/dummy.csv')
+      if existing:
+        current_status = existing.as_json().get('revisionStatus')
+        if current_status != FileService.STATUS_DELETED:
+          try:
+            cls.service.status('/individual-study/dummy.csv', FileService.STATUS_DELETED)
+          except Exception:
+            pass
+        try:
+          cls.service.delete('/individual-study/dummy.csv')
+        except Exception:
+          pass
+    except HTTPError:
+      pass  # File doesn't exist, which is fine
 
   def test_1_fileUpload(self):
     try:

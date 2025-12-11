@@ -10,6 +10,32 @@ class TestClass(unittest.TestCase):
   @classmethod
   def setup_class(cls):
     cls.service = CollectedDatasetsService(Utils.make_client())
+    # Ensure datasets are in expected state before tests
+    cls._ensure_datasets_state()
+
+  @classmethod
+  def teardown_class(cls):
+    # Restore datasets to expected state after tests
+    cls._ensure_datasets_state()
+
+  @classmethod
+  def _ensure_datasets_state(cls):
+    """Ensure cls datasets are in the correct state (published, correct project)"""
+    try:
+      datasets = cls.service.get_datasets('^cls-')
+      for dataset in datasets:
+        try:
+          # Restore correct project value
+          cls.service.update(dataset['id'], 'CLS')
+          # Ensure it's published
+          try:
+            cls.service.publish(dataset['id'])
+          except Exception:
+            pass  # May already be published
+        except Exception:
+          pass  # Individual dataset cleanup failure
+    except Exception:
+      pass  # Datasets may not exist, which is fine for some test environments
 
 
   def __updateProjects(self, dataset, project: str):

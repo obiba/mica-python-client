@@ -7,6 +7,19 @@ class TestClass(unittest.TestCase):
   @classmethod
   def setup_class(cls):
     cls.service = IndividualStudyPermissionService(Utils.make_client())
+    # Clean up any leftover permissions from previous test runs
+    try:
+      cls.service.delete_permission('clsa', 'USER', 'user1')
+    except Exception:
+      pass
+
+  @classmethod
+  def teardown_class(cls):
+    # Clean up after all tests complete
+    try:
+      cls.service.delete_permission('clsa', 'USER', 'user1')
+    except Exception:
+      pass
 
   def test_documentPermission(self):
     try:

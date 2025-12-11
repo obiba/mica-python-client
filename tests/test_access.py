@@ -4,6 +4,23 @@ from tests.utils import Utils
 
 class TestClass(unittest.TestCase):
 
+  def setUp(self):
+    """Clean up before each test to ensure test isolation"""
+    # Clean up document access
+    try:
+      service = IndividualStudyAccessService(Utils.make_client())
+      service.delete_access('clsa', 'USER', 'user1')
+    except Exception:
+      pass
+
+    # Clean up file access
+    try:
+      service = FileAccessService(Utils.make_client())
+      file = '/individual-study/cls/population/1/data-collection-event/4/Wave 4 subject interview.pdf'
+      service.delete_access(file, 'USER', 'user1')
+    except Exception:
+      pass
+
   def test_documentAccess(self):
     self.service = IndividualStudyAccessService(Utils.make_client())
 

@@ -10,6 +10,42 @@ class TestClass(unittest.TestCase):
     def setup_class(cls):
         cls.client = Utils.make_client()
         cls.needsLegacySupport = FileImportService.needsLegacySupport(cls.client)
+        # Clean up any leftover resources from previous test runs
+        cls._cleanup_test_resources()
+
+    @classmethod
+    def teardown_class(cls):
+        # Clean up after all tests complete
+        cls._cleanup_test_resources()
+
+    @classmethod
+    def _cleanup_test_resources(cls):
+        """Clean up test resources to ensure test isolation"""
+        from obiba_mica.core import HTTPError
+        restService = RestService(cls.client)
+
+        resources = [
+            "/draft/network/dummy-test-network",
+            "/draft/individual-study/dummy-test-study"
+        ]
+
+        for resource in resources:
+            try:
+                # Try to change status to DELETED
+                try:
+                    restService.send_request(f"{resource}/_status?value=DELETED",
+                                           restService.make_request("PUT"))
+                except Exception:
+                    pass
+
+                # Try to delete
+                try:
+                    request = restService.make_request("DELETE").ignore_fail_on_error()
+                    restService.send_request(resource, request)
+                except Exception:
+                    pass
+            except Exception:
+                pass  # Ignore all cleanup errors
 
     def __test_changeResourceStatusToDelete(self, restService, resource):
         from obiba_mica.core import HTTPError
