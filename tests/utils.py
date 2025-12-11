@@ -1,5 +1,6 @@
 import sys
 import time
+import os
 from argparse import ArgumentParser
 from obiba_mica import MicaClient
 
@@ -9,6 +10,25 @@ class Utils:
   USER = 'administrator'
   PASSWORD = 'password'
   DEFAULT_PARAMS = {"accept": False, "content_type": False, "verbose": False, "method": 'GET'}
+
+  @staticmethod
+  def is_ci_environment():
+    """
+    Detect if running in CI environment (GitHub Actions, etc.)
+    Returns True if CI environment variables are set
+    """
+    return os.getenv('CI', '').lower() == 'true' or os.getenv('GITHUB_ACTIONS', '').lower() == 'true'
+
+  @staticmethod
+  def get_timeout(base_timeout):
+    """
+    Get timeout adjusted for CI environment.
+    CI environments are slower, so use 3x the base timeout.
+
+    :param base_timeout - base timeout in seconds for local development
+    :return adjusted timeout (base * 3 if CI, else base)
+    """
+    return base_timeout * 3 if Utils.is_ci_environment() else base_timeout
 
   @staticmethod
   def make_client(server=None, user=None, password=None):

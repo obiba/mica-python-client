@@ -46,8 +46,9 @@ class TestClass(unittest.TestCase):
           return False
         assert False, f"HTTPError while unpublishing {dataset['id']}: {e}"
 
-    # Retry with exponential backoff: 1s, 2s, 4s (max 3 effective tries within ~7s)
-    success = Utils.wait_for_condition(try_unpublish, timeout=7, interval=1, backoff='exponential')
+    # Retry with exponential backoff: 1s, 2s, 4s - longer timeout in CI
+    timeout = Utils.get_timeout(7)  # 7s local, 21s in CI
+    success = Utils.wait_for_condition(try_unpublish, timeout=timeout, interval=1, backoff='exponential')
     assert success, f"Failed to unpublish {dataset['id']} after retries"
 
   def __publish(self, dataset):
@@ -65,8 +66,9 @@ class TestClass(unittest.TestCase):
           return False
         assert False, f"HTTPError while publishing {dataset['id']}: {e}"
 
-    # Retry with exponential backoff: 1s, 2s, 4s (max 3 effective tries within ~7s)
-    success = Utils.wait_for_condition(try_publish, timeout=7, interval=1, backoff='exponential')
+    # Retry with exponential backoff: 1s, 2s, 4s - longer timeout in CI
+    timeout = Utils.get_timeout(7)  # 7s local, 21s in CI
+    success = Utils.wait_for_condition(try_publish, timeout=timeout, interval=1, backoff='exponential')
     assert success, f"Failed to publish {dataset['id']} after retries"
 
 

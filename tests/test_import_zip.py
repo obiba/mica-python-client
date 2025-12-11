@@ -12,16 +12,22 @@ class TestClass(unittest.TestCase):
         cls.needsLegacySupport = FileImportService.needsLegacySupport(cls.client)
 
     def __test_changeResourceStatusToDelete(self, restService, resource):
-        try:
-            response = restService.send_request("%s/_status?value=DELETED" % resource, restService.make_request("PUT"))
+        from obiba_mica.core import HTTPError
 
-            if response.code == 204:
-                assert True
-            else:
-                assert False
+        def try_status_change():
+            try:
+                response = restService.send_request("%s/_status?value=DELETED" % resource, restService.make_request("PUT"))
+                return response.code == 204
+            except HTTPError as e:
+                # Retry on server errors (5xx) - resource might not be ready yet
+                if e.is_server_error():
+                    return False
+                raise
 
-        except Exception as e:
-            assert False
+        # Retry with exponential backoff - longer timeout in CI
+        timeout = Utils.get_timeout(7)  # 7s local, 21s in CI
+        success = Utils.wait_for_condition(try_status_change, timeout=timeout, interval=1, backoff='exponential')
+        assert success, f"Failed to change status to DELETED for {resource}"
 
     def __test_deleteResource(self, restService, resource):
         try:

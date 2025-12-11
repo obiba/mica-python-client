@@ -11,11 +11,13 @@ class TestClass(unittest.TestCase):
       response = self.service.add_access('clsa', 'USER', 'user1')
       assert response.code == 204
 
-      response = self.service.list_accesses('clsa').as_json()
-      found = next((x for x in response if x['principal'] == 'user1'), None)
+      # Wait for access to be indexed/available
+      def check_access():
+        response = self.service.list_accesses('clsa').as_json()
+        found = next((x for x in response if x['principal'] == 'user1'), None)
+        return found is not None
 
-      if found is None:
-        assert False
+      assert Utils.wait_for_condition(check_access, timeout=Utils.get_timeout(10)), "Access not found after add"
 
       response = self.service.delete_access('clsa', 'USER', 'user1')
       assert response.code == 204
@@ -30,11 +32,13 @@ class TestClass(unittest.TestCase):
       response = self.service.add_access(file, 'USER', 'user1')
       assert response.code == 204
 
-      response = self.service.list_accesses(file).as_json()
-      found = next((x for x in response if x['principal'] == 'user1'), None)
+      # Wait for access to be indexed/available
+      def check_access():
+        response = self.service.list_accesses(file).as_json()
+        found = next((x for x in response if x['principal'] == 'user1'), None)
+        return found is not None
 
-      if found is None:
-        assert False
+      assert Utils.wait_for_condition(check_access, timeout=Utils.get_timeout(10)), "File access not found after add"
 
       response = self.service.delete_access(file, 'USER', 'user1')
       assert response.code == 204

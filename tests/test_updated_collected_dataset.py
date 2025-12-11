@@ -20,7 +20,7 @@ class TestClass(unittest.TestCase):
           studyTable = collectedDataset['studyTable']
           return studyTable.get('project') == 'dummy'
 
-        assert Utils.wait_for_condition(check_update, timeout=10), "Update did not propagate"
+        assert Utils.wait_for_condition(check_update, timeout=Utils.get_timeout(10)), "Update did not propagate"
       else:
         assert False
 
@@ -38,7 +38,7 @@ class TestClass(unittest.TestCase):
           studyTable = collectedDataset['studyTable']
           return studyTable.get('table') == 'dummy'
 
-        assert Utils.wait_for_condition(check_update, timeout=10), "Update did not propagate"
+        assert Utils.wait_for_condition(check_update, timeout=Utils.get_timeout(10)), "Update did not propagate"
       else:
         assert False
 
@@ -56,7 +56,7 @@ class TestClass(unittest.TestCase):
           studyTable = collectedDataset['studyTable']
           return studyTable.get('project') == 'CLS' and studyTable.get('table') == 'Wave1'
 
-        assert Utils.wait_for_condition(check_update, timeout=10), "Update did not propagate"
+        assert Utils.wait_for_condition(check_update, timeout=Utils.get_timeout(10)), "Update did not propagate"
       else:
         assert False
 
