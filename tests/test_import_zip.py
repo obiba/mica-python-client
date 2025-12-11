@@ -25,7 +25,9 @@ class TestClass(unittest.TestCase):
 
     def __test_deleteResource(self, restService, resource):
         try:
-            response = restService.send_request(resource, restService.make_request("DELETE"))
+            # Don't fail on errors so we can handle 404 as valid (idempotent delete)
+            request = restService.make_request("DELETE").ignore_fail_on_error()
+            response = restService.send_request(resource, request)
             # Accept 204 (deleted) or 404 (already gone) to make the test idempotent
             assert response.code in (204, 404), f"Failed to delete resource {resource}: {response.content}"
         except Exception as e:
