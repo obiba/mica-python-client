@@ -30,14 +30,28 @@ class TestClass(unittest.TestCase):
         assert success, f"Failed to change status to DELETED for {resource}"
 
     def __test_deleteResource(self, restService, resource):
-        try:
-            # Don't fail on errors so we can handle 404 as valid (idempotent delete)
-            request = restService.make_request("DELETE").ignore_fail_on_error()
-            response = restService.send_request(resource, request)
-            # Accept 204 (deleted) or 404 (already gone) to make the test idempotent
-            assert response.code in (204, 404), f"Failed to delete resource {resource}: {response.content}"
-        except Exception as e:
-            assert False, f"Exception while deleting resource {resource}: {e}"
+        def try_delete():
+            try:
+                # Don't fail on errors so we can handle 404 and 409 as retriable
+                request = restService.make_request("DELETE").ignore_fail_on_error()
+                response = restService.send_request(resource, request)
+
+                # 204 = deleted, 404 = already gone (both success)
+                if response.code in (204, 404):
+                    return True
+                # 409 = conflict (still has dependencies, retry)
+                elif response.code == 409:
+                    return False
+                else:
+                    # Unexpected error code, fail immediately
+                    assert False, f"Unexpected response {response.code} deleting {resource}: {response.content}"
+            except Exception as e:
+                assert False, f"Exception while deleting resource {resource}: {e}"
+
+        # Retry delete with exponential backoff for 409 conflicts
+        timeout = Utils.get_timeout(15)  # 15s local, 45s in CI
+        success = Utils.wait_for_condition(try_delete, timeout=timeout, interval=1, backoff='exponential')
+        assert success, f"Failed to delete resource {resource} after {timeout}s (dependencies not cleared)"
 
     def test_1_importZip(self):
         try:

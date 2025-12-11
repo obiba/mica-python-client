@@ -99,6 +99,17 @@ class TestClass(unittest.TestCase):
   def test_6_changeDeletedStatus(self):
     self.__test_fileChangeStatus('/individual-study/dummy.csv', FileService.STATUS_DELETED)
 
+    # Wait for status change to propagate before test_7 tries to delete
+    def check_status():
+      try:
+        state = self.service.get('/individual-study/dummy.csv').as_json()
+        return state.get('revisionStatus') == FileService.STATUS_DELETED
+      except Exception:
+        return False
+
+    assert Utils.wait_for_condition(check_status, timeout=Utils.get_timeout(10)), \
+        "File status did not propagate to DELETED"
+
   def test_7_fileDelete(self):
     self.__test_fileDelete('/individual-study/dummy.csv')
 
@@ -108,6 +119,18 @@ class TestClass(unittest.TestCase):
 
       if response.code == 201:
         self.__test_fileChangeStatus('/individual-study/yoyo', FileService.STATUS_DELETED)
+
+        # Wait for status change to propagate before delete
+        def check_status():
+          try:
+            state = self.service.get('/individual-study/yoyo').as_json()
+            return state.get('revisionStatus') == FileService.STATUS_DELETED
+          except Exception:
+            return False
+
+        assert Utils.wait_for_condition(check_status, timeout=Utils.get_timeout(10)), \
+            "Folder status did not propagate to DELETED"
+
         self.__test_fileDelete('/individual-study/yoyo')
 
       else:
