@@ -14,20 +14,29 @@ class TestClass(unittest.TestCase):
     def __test_changeResourceStatusToDelete(self, restService, resource):
         from obiba_mica.core import HTTPError
 
+        last_error = None
+
         def try_status_change():
+            nonlocal last_error
             try:
                 response = restService.send_request("%s/_status?value=DELETED" % resource, restService.make_request("PUT"))
                 return response.code == 204
             except HTTPError as e:
+                last_error = e
                 # Retry on 404 (resource not indexed yet) or 5xx (server errors)
                 if e.code == 404 or e.is_server_error():
                     return False
                 raise
 
         # Retry with exponential backoff - longer timeout in CI
-        timeout = Utils.get_timeout(7)  # 7s local, 21s in CI
+        # Using longer timeout since status changes can take time after import
+        timeout = Utils.get_timeout(10)  # 10s local, 30s in CI
         success = Utils.wait_for_condition(try_status_change, timeout=timeout, interval=1, backoff='exponential')
-        assert success, f"Failed to change status to DELETED for {resource}"
+        if not success:
+            error_msg = f"Failed to change status to DELETED for {resource}"
+            if last_error:
+                error_msg += f" - Last error: {last_error.code} {last_error}"
+            assert False, error_msg
 
     def __test_deleteResource(self, restService, resource):
         def try_delete():
