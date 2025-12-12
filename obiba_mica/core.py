@@ -190,6 +190,10 @@ class MicaRequest:
         self._fail_on_error = True
         return self
 
+    def ignore_fail_on_error(self):
+        self._fail_on_error = False
+        return self
+
     def header(self, key, value):
         """
         Adds a header to session headers used by the request

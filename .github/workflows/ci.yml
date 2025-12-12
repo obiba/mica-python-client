@@ -10,6 +10,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 1  # Run tests sequentially to avoid conflicts on shared mica-demo.obiba.org server
       matrix:
         python-version: [3.8.18, 3.10.18, 3.12.11]
     steps:

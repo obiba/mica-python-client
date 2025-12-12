@@ -4,6 +4,23 @@ from tests.utils import Utils
 
 class TestClass(unittest.TestCase):
 
+  def setUp(self):
+    """Clean up before each test to ensure test isolation"""
+    # Clean up document access
+    try:
+      service = IndividualStudyAccessService(Utils.make_client())
+      service.delete_access('clsa', 'USER', 'user1')
+    except Exception:
+      pass
+
+    # Clean up file access
+    try:
+      service = FileAccessService(Utils.make_client())
+      file = '/individual-study/cls/population/1/data-collection-event/4/Wave 4 subject interview.pdf'
+      service.delete_access(file, 'USER', 'user1')
+    except Exception:
+      pass
+
   def test_documentAccess(self):
     self.service = IndividualStudyAccessService(Utils.make_client())
 
@@ -11,11 +28,13 @@ class TestClass(unittest.TestCase):
       response = self.service.add_access('clsa', 'USER', 'user1')
       assert response.code == 204
 
-      response = self.service.list_accesses('clsa').as_json()
-      found = next((x for x in response if x['principal'] == 'user1'), None)
+      # Wait for access to be indexed/available
+      def check_access():
+        response = self.service.list_accesses('clsa').as_json()
+        found = next((x for x in response if x['principal'] == 'user1'), None)
+        return found is not None
 
-      if found is None:
-        assert False
+      assert Utils.wait_for_condition(check_access, timeout=Utils.get_timeout(10)), "Access not found after add"
 
       response = self.service.delete_access('clsa', 'USER', 'user1')
       assert response.code == 204
@@ -30,11 +49,13 @@ class TestClass(unittest.TestCase):
       response = self.service.add_access(file, 'USER', 'user1')
       assert response.code == 204
 
-      response = self.service.list_accesses(file).as_json()
-      found = next((x for x in response if x['principal'] == 'user1'), None)
+      # Wait for access to be indexed/available
+      def check_access():
+        response = self.service.list_accesses(file).as_json()
+        found = next((x for x in response if x['principal'] == 'user1'), None)
+        return found is not None
 
-      if found is None:
-        assert False
+      assert Utils.wait_for_condition(check_access, timeout=Utils.get_timeout(10)), "File access not found after add"
 
       response = self.service.delete_access(file, 'USER', 'user1')
       assert response.code == 204
