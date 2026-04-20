@@ -39,8 +39,8 @@ class TestClass(unittest.TestCase):
 
             response = self.service.delete_access("clsa", "USER", "user1")
             assert response.code == 204
-        except Exception:
-            assert False
+        except Exception as e:
+            raise AssertionError(f"test_documentAccess failed: {e}") from e
 
     def test_fileAccess(self):
         self.service = FileAccessService(Utils.make_client())
@@ -60,5 +60,5 @@ class TestClass(unittest.TestCase):
 
             response = self.service.delete_access(file, "USER", "user1")
             assert response.code == 204
-        except Exception:
-            assert False
+        except Exception as e:
+            raise AssertionError(f"test_fileAccess failed: {e}") from e
