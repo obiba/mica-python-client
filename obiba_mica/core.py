@@ -7,7 +7,7 @@ import json
 import os.path
 import getpass
 from http import HTTPStatus
-import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 from functools import reduce
 from requests import Session, Request
 import urllib3
@@ -115,7 +115,7 @@ class MicaClient:
         try:
             self.new_request().resource("/auth/session/_current").delete().send()
             self.session.close()
-        except Exception as e:
+        except Exception:
             pass
 
     class LoginInfo:
@@ -149,7 +149,7 @@ class MicaClient:
             else:
                 raise ValueError("Invalid login information. Requires user and password.")
 
-            setattr(cls, "data", data)
+            cls.data = data
             return cls()
 
 
@@ -396,7 +396,7 @@ class MicaResponse:
 
         try:
             return self.response.json()
-        except Exception as e:
+        except Exception:
             if type(self.response.content) == str:
                 return self.response.content
             else:

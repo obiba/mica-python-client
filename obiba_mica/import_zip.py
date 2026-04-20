@@ -48,7 +48,7 @@ class FileImportService:
         restService = RestService(client, verbose)
         response = restService.send_request("/auth/session/_current", restService.make_request("GET"))
         # Only the Mica server supporting Java 21 has version information in the response
-        versionInfo =  response.version_info
+        versionInfo = response.version_info
 
         if versionInfo is not None:
             # Versions prior to 5.5.x need legacy support
@@ -74,7 +74,7 @@ class FileImportService:
                         if len(res) > 0:
                             isStudy = res[0] == "study"
 
-                            with open(file_path, mode="r", encoding="utf-8") as f:
+                            with open(file_path, encoding="utf-8") as f:
                                 # Read the content of the file
                                 content = json.loads(f.read())
                                 if isStudy:
@@ -97,7 +97,7 @@ class FileImportService:
         :param path - local path to the zip file
         :param publish - If True, after the upload, publish the zipped Mica documents (Network, Study, Dataset, files)
         """
-        print("Importing {} ...".format(path))
+        print(f"Importing {path} ...")
 
         query = "publish=%s" % str(publish).lower() if publish is not None and publish else ""
         request = self.__make_request()

@@ -1,1 +1,1 @@
-from tests import test_rest
+from tests import test_rest as test_rest

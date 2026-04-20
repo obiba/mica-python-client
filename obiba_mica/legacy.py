@@ -70,8 +70,8 @@ class MicaLegacySupport:
 
     @staticmethod
     def removeDatasetEntityState(dataset):
-        dataset.pop('obiba.mica.EntityStateDto.datasetState', None)
-        dataset.pop('state', None)
+        dataset.pop("obiba.mica.EntityStateDto.datasetState", None)
+        dataset.pop("state", None)
 
     @staticmethod
     def getCollectedDataset(dataset):
