@@ -1,33 +1,54 @@
-[tool.poetry]
+[project]
 name = "obiba-mica"
 version = "5.1.1"
 description = "OBiBa/Mica python client."
-authors = ["Yannick Marcon <yannick.marcon@obiba.org>"]
-license = "GPL-v3"
+authors = [
+    {name = "Yannick Marcon", email = "yannick.marcon@obiba.org"}
+]
+license = {text = "GPL-3.0-only"}
 readme = "README.md"
-packages = [{include = "obiba_mica"}]
-homepage = "https://www.obiba.org"
-repository = "https://github.com/obiba/mica-python-client"
-documentation = "https://micadoc.obiba.org/en/latest/python-user-guide/"
+requires-python = ">=3.10"
+keywords = ["mica", "obiba", "data", "management"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "requests>=2.31.0",
+    "urllib3>=2.0",
+]
 
-[tool.poetry.urls]
+[project.optional-dependencies]
+test = [
+    "pytest>=7.2.2",
+]
+dev = [
+    "ruff>=0.10.0",
+]
+
+[project.scripts]
+mica = "obiba_mica.console:run"
+
+[project.urls]
+Homepage = "https://www.obiba.org"
+Repository = "https://github.com/obiba/mica-python-client"
+Documentation = "https://micadoc.obiba.org/en/latest/python-user-guide/"
 "Bug Tracker" = "https://github.com/obiba/mica-python-client/issues"
 
-[tool.poetry.dependencies]
-python = "^3.7"
-requests = "^2.31.0"
-urllib3 = "1.26.15"
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.2.2"
-
-
-[tool.poetry.group.dev.dependencies]
-autopep8 = "^2.0.2"
-
-[tool.poetry.scripts]
-mica = 'obiba_mica.console:run'
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["obiba_mica"]
+
+[tool.pytest.ini_options]
+markers = [
+    "integration: marks tests that require a running Mica instance",
+]

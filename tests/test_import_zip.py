@@ -21,20 +21,15 @@ class TestClass(unittest.TestCase):
     @classmethod
     def _cleanup_test_resources(cls):
         """Clean up test resources to ensure test isolation"""
-        from obiba_mica.core import HTTPError
         restService = RestService(cls.client)
 
-        resources = [
-            "/draft/network/dummy-test-network",
-            "/draft/individual-study/dummy-test-study"
-        ]
+        resources = ["/draft/network/dummy-test-network", "/draft/individual-study/dummy-test-study"]
 
         for resource in resources:
             try:
                 # Try to change status to DELETED
                 try:
-                    restService.send_request(f"{resource}/_status?value=DELETED",
-                                           restService.make_request("PUT"))
+                    restService.send_request(f"{resource}/_status?value=DELETED", restService.make_request("PUT"))
                 except Exception:
                     pass
 
@@ -67,7 +62,7 @@ class TestClass(unittest.TestCase):
         # Retry with exponential backoff - longer timeout in CI
         # Using longer timeout since status changes can take time after import
         timeout = Utils.get_timeout(10)  # 10s local, 30s in CI
-        success = Utils.wait_for_condition(try_status_change, timeout=timeout, interval=1, backoff='exponential')
+        success = Utils.wait_for_condition(try_status_change, timeout=timeout, interval=1, backoff="exponential")
         if not success:
             error_msg = f"Failed to change status to DELETED for {resource}"
             if last_error:
@@ -95,7 +90,7 @@ class TestClass(unittest.TestCase):
 
         # Retry delete with exponential backoff for 409 conflicts
         timeout = Utils.get_timeout(15)  # 15s local, 45s in CI
-        success = Utils.wait_for_condition(try_delete, timeout=timeout, interval=1, backoff='exponential')
+        success = Utils.wait_for_condition(try_delete, timeout=timeout, interval=1, backoff="exponential")
         assert success, f"Failed to delete resource {resource} after {timeout}s (dependencies not cleared)"
 
     def test_1_importZip(self):
@@ -107,19 +102,11 @@ class TestClass(unittest.TestCase):
 
                 # Wait for resources to be indexed/available after import
                 restService = RestService(self.client)
-                Utils.wait_for_condition(
-                    lambda: restService.send_request("/draft/individual-study/dummy-test-study",
-                                                     restService.make_request("GET")).code == 200,
-                    timeout=Utils.get_timeout(10)
-                )
-                Utils.wait_for_condition(
-                    lambda: restService.send_request("/draft/network/dummy-test-network",
-                                                     restService.make_request("GET")).code == 200,
-                    timeout=Utils.get_timeout(10)
-                )
+                Utils.wait_for_condition(lambda: restService.send_request("/draft/individual-study/dummy-test-study", restService.make_request("GET")).code == 200, timeout=Utils.get_timeout(10))
+                Utils.wait_for_condition(lambda: restService.send_request("/draft/network/dummy-test-network", restService.make_request("GET")).code == 200, timeout=Utils.get_timeout(10))
             else:
                 assert True
-        except Exception as e:
+        except Exception:
             assert False
 
     def test_2_deleteDummy(self):
@@ -132,7 +119,7 @@ class TestClass(unittest.TestCase):
                 self.__test_deleteResource(restService, "/draft/individual-study/dummy-test-study")
             else:
                 assert True
-        except Exception as e:
+        except Exception:
             assert False
 
     def test_3_importZip(self):
@@ -143,17 +130,9 @@ class TestClass(unittest.TestCase):
 
             # Wait for resources to be indexed/available after import
             restService = RestService(self.client)
-            Utils.wait_for_condition(
-                lambda: restService.send_request("/draft/individual-study/dummy-test-study",
-                                                 restService.make_request("GET")).code == 200,
-                timeout=Utils.get_timeout(10)
-            )
-            Utils.wait_for_condition(
-                lambda: restService.send_request("/draft/network/dummy-test-network",
-                                                 restService.make_request("GET")).code == 200,
-                timeout=Utils.get_timeout(10)
-            )
-        except Exception as e:
+            Utils.wait_for_condition(lambda: restService.send_request("/draft/individual-study/dummy-test-study", restService.make_request("GET")).code == 200, timeout=Utils.get_timeout(10))
+            Utils.wait_for_condition(lambda: restService.send_request("/draft/network/dummy-test-network", restService.make_request("GET")).code == 200, timeout=Utils.get_timeout(10))
+        except Exception:
             assert False
 
     def test_4_deleteDummy(self):
@@ -163,5 +142,5 @@ class TestClass(unittest.TestCase):
             self.__test_deleteResource(restService, "/draft/network/dummy-test-network")
             self.__test_changeResourceStatusToDelete(restService, "/draft/individual-study/dummy-test-study")
             self.__test_deleteResource(restService, "/draft/individual-study/dummy-test-study")
-        except Exception as e:
+        except Exception:
             assert False
