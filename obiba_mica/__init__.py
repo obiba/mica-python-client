@@ -9,3 +9,4 @@ from obiba_mica.annotation import AnnotationService as AnnotationService
 from obiba_mica.plugin import PluginService as PluginService
 from obiba_mica.update_collected_dataset import CollectedDatasetService as CollectedDatasetService
 from obiba_mica.update_collected_datasets import CollectedDatasetsService as CollectedDatasetsService
+from obiba_mica.data_access import DataAccessService as DataAccessService

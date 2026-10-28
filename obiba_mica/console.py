@@ -31,6 +31,7 @@ from obiba_mica.annotation import AnnotationService
 from obiba_mica.plugin import PluginService
 from obiba_mica.update_collected_dataset import CollectedDatasetService
 from obiba_mica.update_collected_datasets import CollectedDatasetsService
+from obiba_mica.data_access import DataAccessService
 
 
 def prompt_password():
@@ -121,7 +122,9 @@ def run():
     add_subcommand(subparsers, "update-collected-dataset", "Update collected dataset linkage with an Opal table.", CollectedDatasetService.add_arguments, CollectedDatasetService.do_command)
     add_subcommand(subparsers, "update-collected-datasets", "Update collected datasets linkage with an Opal table.", CollectedDatasetsService.add_arguments, CollectedDatasetsService.do_command)
 
-    add_subcommand(subparsers, "plugin", "Manage system plugins.", PluginService.add_arguments, PluginService.do_command)
+    add_subcommand(subparsers, "data-access", "List the data access requests with their preliminary and child entities counts.", DataAccessService.add_arguments, DataAccessService.do_command)
+
+    add_subcommand(subparsers, "plugin","Manage system plugins.", PluginService.add_arguments, PluginService.do_command)
 
     add_subcommand(subparsers, "rest", "Request directly the Mica REST API, for advanced users.", RestService.add_arguments, RestService.do_command)
 
